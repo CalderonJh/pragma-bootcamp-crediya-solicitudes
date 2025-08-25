@@ -1,0 +1,3 @@
+routes:
+  paths:
+    apply: "/api/v1/solicitud"
