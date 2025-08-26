@@ -21,14 +21,4 @@ public class Handler {
         .flatMap(useCase::applyForLoan)
         .then(Mono.defer(() -> ServerResponse.ok().build()));
   }
-
-  public Mono<ServerResponse> listenGETOtherUseCase(ServerRequest serverRequest) {
-    // useCase2.logic();
-    return ServerResponse.ok().bodyValue("");
-  }
-
-  public Mono<ServerResponse> listenPOSTUseCase(ServerRequest serverRequest) {
-    // useCase.logic();
-    return ServerResponse.ok().bodyValue("");
-  }
 }
