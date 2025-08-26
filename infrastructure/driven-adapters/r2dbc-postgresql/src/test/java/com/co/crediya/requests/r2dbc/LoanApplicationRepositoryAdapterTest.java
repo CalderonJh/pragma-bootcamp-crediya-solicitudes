@@ -1,0 +1,46 @@
+package com.co.crediya.requests.r2dbc;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+
+import com.co.crediya.requests.model.loanapplication.LoanApplication;
+import com.co.crediya.requests.model.loanapplication.LoanStatus;
+import com.co.crediya.requests.model.loanapplication.LoanType;
+import com.co.crediya.requests.r2dbc.entity.LoanApplicationEntity;
+import com.co.crediya.requests.r2dbc.mapper.LoanApplicationMapper;
+import com.co.crediya.requests.r2dbc.repository.LoanApplicationRepository;
+import com.co.crediya.requests.r2dbc.repository.adapter.LoanApplicationRepositoryAdapter;
+import java.util.UUID;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
+
+@ExtendWith(MockitoExtension.class)
+class LoanApplicationRepositoryAdapterTest {
+
+  @InjectMocks LoanApplicationRepositoryAdapter repositoryAdapter;
+
+  @Mock LoanApplicationRepository repository;
+
+  @Test
+  void mustSaveLoanApplication() {
+    LoanApplication loan =
+        LoanApplication.builder()
+            .id(UUID.randomUUID())
+            .applicantEmail("email@email.com")
+            .loanType(new LoanType(UUID.randomUUID()))
+            .loanStatus(new LoanStatus(UUID.randomUUID(), "PENDING", "Pending"))
+            .build();
+    LoanApplicationEntity entity = LoanApplicationMapper.toEntity(loan);
+
+    when(repository.save(any(LoanApplicationEntity.class))).thenReturn(Mono.just(entity));
+
+    Mono<Void> result = repositoryAdapter.saveLoanApplication(loan);
+
+    StepVerifier.create(result).verifyComplete();
+  }
+}
