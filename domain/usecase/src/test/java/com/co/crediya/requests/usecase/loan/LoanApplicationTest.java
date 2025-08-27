@@ -72,7 +72,7 @@ class LoanApplicationTest {
   }
 
   @Test
-  @DisplayName("Error when loan type amount is zero")
+  @DisplayName("Error when loan amount is zero")
   void errorWhenLoanAmountIsInvalid() {
     loanApplication.setAmount(BigDecimal.valueOf(0));
 
@@ -81,7 +81,7 @@ class LoanApplicationTest {
             e ->
                 assertThat(e)
                     .isInstanceOf(BusinessRuleException.class)
-                    .hasMessage(MessageTemplate.POSITIVE.render("Loan type")))
+                    .hasMessage(MessageTemplate.POSITIVE.render("Loan amount")))
         .verify();
   }
 
