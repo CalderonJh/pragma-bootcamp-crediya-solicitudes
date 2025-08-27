@@ -32,7 +32,3 @@ adapters:
     schema: "public"
     username: "calderonjh"
     password: "securepass"
-
-routes:
-  paths:
-    apply: "/api/v1/solicitud"

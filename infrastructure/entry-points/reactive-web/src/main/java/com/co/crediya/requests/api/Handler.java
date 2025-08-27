@@ -2,8 +2,10 @@ package com.co.crediya.requests.api;
 
 import com.co.crediya.requests.api.dto.LoanApplicationDTO;
 import com.co.crediya.requests.api.mapper.LoanApplicationMapper;
-import com.co.crediya.requests.usecase.loanapplication.LoanApplicationUseCase;
+import com.co.crediya.requests.model.loanapplication.LoanApplication;
+import com.co.crediya.requests.usecase.loan.LoanApplicationUseCase;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
@@ -20,5 +22,11 @@ public class Handler {
         .map(LoanApplicationMapper::toModel)
         .flatMap(useCase::applyForLoan)
         .then(Mono.defer(() -> ServerResponse.ok().build()));
+  }
+
+  public Mono<ServerResponse> listenGETAllLoanApplications() {
+    return ServerResponse.ok()
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(useCase.getAllLoanApplications(), LoanApplication.class);
   }
 }

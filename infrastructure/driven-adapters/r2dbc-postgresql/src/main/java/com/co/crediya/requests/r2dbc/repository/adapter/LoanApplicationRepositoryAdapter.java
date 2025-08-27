@@ -29,6 +29,6 @@ public class LoanApplicationRepositoryAdapter
 
   @Override
   public Flux<LoanApplication> getLoanApplications() {
-    return null;
+    return repository.findAllView().map(LoanApplicationMapper::toModel);
   }
 }

@@ -13,7 +13,7 @@ public class LoanType {
   private UUID id;
   private BigDecimal minAmount;
   private BigDecimal maxAmount;
-  private Double interestRate;
+  private BigDecimal interestRate;
   private Boolean autoValidate;
 
   public LoanType(UUID id) {

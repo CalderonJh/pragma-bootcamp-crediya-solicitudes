@@ -27,4 +27,8 @@ public class LoanTypeEntity {
 
   @Column("validacion_automatica")
   private Boolean autoValidate;
+
+  public LoanTypeEntity(UUID id) {
+    this.id = id;
+  }
 }

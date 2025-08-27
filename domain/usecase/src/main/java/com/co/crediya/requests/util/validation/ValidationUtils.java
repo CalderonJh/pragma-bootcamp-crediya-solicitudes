@@ -1,4 +1,4 @@
-package com.co.crediya.requests.usecase.util;
+package com.co.crediya.requests.util.validation;
 
 import java.math.BigDecimal;
 

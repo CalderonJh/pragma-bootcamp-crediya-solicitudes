@@ -1,10 +1,11 @@
 package com.co.crediya.requests.api;
 
+import static org.springframework.web.reactive.function.server.RequestPredicates.GET;
 import static org.springframework.web.reactive.function.server.RequestPredicates.POST;
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
 
-import com.co.crediya.requests.api.config.LoanApplicationPath;
 import com.co.crediya.requests.api.dto.LoanApplicationDTO;
+import com.co.crediya.requests.model.loanapplication.LoanApplication;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -22,7 +23,6 @@ import org.springframework.web.reactive.function.server.ServerResponse;
 @Configuration
 @RequiredArgsConstructor
 public class RouterRest {
-  private final LoanApplicationPath path;
 
   @RouterOperations({
     @RouterOperation(
@@ -38,15 +38,34 @@ public class RouterRest {
                     @RequestBody(
                         content =
                             @Content(schema = @Schema(implementation = LoanApplicationDTO.class))),
+                responses = {@ApiResponse(responseCode = "200", content = @Content())})),
+    @RouterOperation(
+        path = "/api/v1/solicitudes",
+        method = RequestMethod.GET,
+        beanClass = Handler.class,
+        beanMethod = "listenGETAllLoanApplications",
+        operation =
+            @Operation(
+                operationId = "getAllLoanApplications",
+                summary = "Consulta todas las solicitudes de préstamo",
+                requestBody =
+                    @RequestBody(
+                        content =
+                            @Content(schema = @Schema(implementation = LoanApplicationDTO.class))),
                 responses = {
-                  @ApiResponse(responseCode = "200", content = @Content()),
-                  @ApiResponse(responseCode = "400", description = "Invalid request")
+                  @ApiResponse(
+                      responseCode = "200",
+                      content = @Content(schema = @Schema(implementation = LoanApplication.class)))
                 }))
   })
   @Bean
   public RouterFunction<ServerResponse> routerFunction(Handler handler) {
-    return route(POST(path.getApply()), handler::listenPOSTApplyForLoan);
-    //        .andRoute(POST("/api/usecase/otherpath"), handler::listenPOSTUseCase)
-    //        .and(route(GET("/api/otherusercase/path"), handler::listenGETOtherUseCase));
+    return route(POST("/api/v1/solicitud"), handler::listenPOSTApplyForLoan)
+        .and(route(GET("/api/v1/solicitudes"), s -> handler.listenGETAllLoanApplications()));
+  }
+
+  @Bean
+  public RouterFunction<ServerResponse> health() {
+    return route(GET("/health"), request -> ServerResponse.ok().bodyValue("OK"));
   }
 }

@@ -1,4 +1,4 @@
-package com.co.crediya.requests.usecase.exception;
+package com.co.crediya.requests.exception;
 
 public class DataNotFoundException extends RuntimeException {
   public DataNotFoundException(String message) {

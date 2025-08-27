@@ -1,0 +1,72 @@
+package com.co.crediya.requests.usecase.loan;
+
+import static com.co.crediya.requests.util.Constant.DEFAULT_LOAN_STATUS;
+import static com.co.crediya.requests.util.validation.ReactiveValidators.*;
+
+import com.co.crediya.requests.exception.DataNotFoundException;
+import com.co.crediya.requests.exception.InternalException;
+import com.co.crediya.requests.model.loanapplication.LoanApplication;
+import com.co.crediya.requests.model.loanapplication.gateways.LoanApplicationRepository;
+import com.co.crediya.requests.model.loanapplication.gateways.LoanStatusRepository;
+import com.co.crediya.requests.model.loanapplication.gateways.LoanTypeRepository;
+import java.util.UUID;
+import java.util.logging.Logger;
+import lombok.RequiredArgsConstructor;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
+@RequiredArgsConstructor
+public class LoanApplicationUseCase {
+  private final LoanApplicationRepository loanApplicationRepository;
+  private final LoanStatusRepository loanStatusRepository;
+  private final LoanTypeRepository loanTypeRepository;
+  private static final Logger logger = Logger.getLogger(LoanApplicationUseCase.class.getName());
+
+  public Mono<Void> applyForLoan(LoanApplication loanApplication) {
+    return Mono.just(loanApplication)
+        .flatMap(this::validateConstraints)
+        .flatMap(this::validateReferences)
+        .flatMap(this::setDefaultLoanStatus)
+        .doOnNext(la -> logger.info("Saving loan application: %s".formatted(la.toString())))
+        .flatMap(loanApplicationRepository::saveLoanApplication)
+        .then();
+  }
+
+  public Flux<LoanApplication> getAllLoanApplications() {
+    return loanApplicationRepository.getLoanApplications();
+  }
+
+  private Mono<LoanApplication> validateConstraints(LoanApplication loanApplication) {
+    return email(loanApplication.getApplicantEmail())
+        .then(positive(loanApplication.getAmount(), "Loan amount"))
+        .then(positive(loanApplication.getTermInMonths(), "Loan term"))
+        .thenReturn(loanApplication);
+  }
+
+  private Mono<LoanApplication> validateReferences(LoanApplication loanApplication) {
+    return validateExistsLoanType(loanApplication);
+  }
+
+  private Mono<LoanApplication> validateExistsLoanType(LoanApplication loanApplication) {
+    UUID loanTypeId = loanApplication.getLoanType().getId();
+    return notNull(loanApplication.getLoanType().getId(), "Loan type id")
+        .then(loanTypeRepository.findLoanTypeById(loanTypeId))
+        .switchIfEmpty(Mono.error(new DataNotFoundException("Loan type does not exist")))
+        .map(
+            loanType -> {
+              loanApplication.setLoanType(loanType);
+              return loanApplication;
+            });
+  }
+
+  private Mono<LoanApplication> setDefaultLoanStatus(LoanApplication loanApplication) {
+    return loanStatusRepository
+        .findLoanStatusByName(DEFAULT_LOAN_STATUS)
+        .switchIfEmpty(Mono.error(new InternalException("Default loan status not found")))
+        .map(
+            loanStatus -> {
+              loanApplication.setLoanStatus(loanStatus);
+              return loanApplication;
+            });
+  }
+}

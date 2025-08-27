@@ -5,7 +5,7 @@ import static org.mockito.Mockito.when;
 
 import com.co.crediya.requests.api.config.LoanApplicationPath;
 import com.co.crediya.requests.api.dto.LoanApplicationDTO;
-import com.co.crediya.requests.usecase.loanapplication.LoanApplicationUseCase;
+import com.co.crediya.requests.usecase.loan.LoanApplicationUseCase;
 import java.math.BigDecimal;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -16,6 +16,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @WebFluxTest
@@ -46,5 +47,19 @@ class RouterRestTest {
         .isOk()
         .expectBody()
         .isEmpty();
+  }
+
+  @Test
+  void testListenGETAllApplications() {
+    when(loanApplicationUseCase.getAllLoanApplications()).thenReturn(Flux.empty());
+    webTestClient
+        .get()
+        .uri("/api/v1/solicitudes")
+        .accept(MediaType.APPLICATION_JSON)
+        .exchange()
+        .expectStatus()
+        .isOk()
+        .expectBody()
+        .json("[]");
   }
 }

@@ -2,7 +2,7 @@ package com.co.crediya.requests.api.config;
 
 import com.co.crediya.requests.api.Handler;
 import com.co.crediya.requests.api.RouterRest;
-import com.co.crediya.requests.usecase.loanapplication.LoanApplicationUseCase;
+import com.co.crediya.requests.usecase.loan.LoanApplicationUseCase;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
@@ -23,7 +23,7 @@ class ConfigTest {
   void corsConfigurationShouldAllowOrigins() {
     webTestClient
         .get()
-        .uri("/api/usecase/path")
+        .uri("/health")
         .exchange()
         .expectStatus()
         .isOk()
