@@ -11,8 +11,8 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
-@ContextConfiguration(classes = {RouterRest.class, Handler.class, LoanApplicationPath.class})
 @WebFluxTest
+@ContextConfiguration(classes = {RouterRest.class, Handler.class})
 @Import({CorsConfig.class, SecurityHeadersConfig.class})
 class ConfigTest {
 

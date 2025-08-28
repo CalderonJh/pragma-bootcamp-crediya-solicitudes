@@ -3,14 +3,12 @@ package com.co.crediya.requests.api;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-import com.co.crediya.requests.api.config.LoanApplicationPath;
 import com.co.crediya.requests.api.dto.LoanApplicationDTO;
 import com.co.crediya.requests.usecase.loan.LoanApplicationUseCase;
 import java.math.BigDecimal;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ContextConfiguration;
@@ -21,7 +19,6 @@ import reactor.core.publisher.Mono;
 
 @WebFluxTest
 @ContextConfiguration(classes = {RouterRest.class, Handler.class})
-@EnableConfigurationProperties(LoanApplicationPath.class)
 class RouterRestTest {
 
   @Autowired private WebTestClient webTestClient;
