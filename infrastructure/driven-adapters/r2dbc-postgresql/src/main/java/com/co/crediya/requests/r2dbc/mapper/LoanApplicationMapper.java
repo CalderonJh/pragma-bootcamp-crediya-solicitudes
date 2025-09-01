@@ -19,6 +19,17 @@ public class LoanApplicationMapper {
         .build();
   }
 
+  public static LoanApplication toModel(LoanApplicationEntity entity) {
+    return LoanApplication.builder()
+        .id(entity.getId())
+        .applicantEmail(entity.getApplicantEmail())
+        .amount(entity.getAmount())
+        .termInMonths(entity.getTermInMonths())
+        .loanType(LoanType.builder().id(entity.getLoanTypeId()).build())
+        .loanStatus(LoanStatus.builder().id(entity.getLoanStatusId()).build())
+        .build();
+  }
+
   public static LoanApplication toModel(LoanApplicationView row) {
     return LoanApplication.builder()
         .id(row.getId())

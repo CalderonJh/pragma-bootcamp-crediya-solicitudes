@@ -1,8 +1,6 @@
 package com.co.crediya.requests.api.exception.handler;
 
-import com.co.crediya.requests.exception.BusinessRuleException;
-import com.co.crediya.requests.exception.DataNotFoundException;
-import com.co.crediya.requests.exception.InternalException;
+import com.co.crediya.requests.exception.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDateTime;
@@ -29,8 +27,12 @@ public class GlobalExceptionHandler implements ErrorWebExceptionHandler {
   private final ObjectMapper objectMapper;
   private static final Map<Class<? extends Throwable>, HttpStatus> EXCEPTION_STATUS_MAP =
       Map.of(
-          BusinessRuleException.class,
+          ConflictException.class,
+          HttpStatus.CONFLICT,
+          ValidationException.class,
           HttpStatus.BAD_REQUEST,
+          PermissionException.class,
+          HttpStatus.FORBIDDEN,
           InternalException.class,
           HttpStatus.INTERNAL_SERVER_ERROR,
           DataNotFoundException.class,
@@ -77,7 +79,7 @@ public class GlobalExceptionHandler implements ErrorWebExceptionHandler {
 
   private String extractMessage(Throwable ex) {
     return switch (ex) {
-      case BusinessRuleException businessEx -> businessEx.getMessage();
+      case ConflictException businessEx -> businessEx.getMessage();
       case DataNotFoundException dataEx -> dataEx.getMessage();
       case InternalException ignored -> "An internal error occurred";
       case ResponseStatusException responseEx -> responseEx.getReason();

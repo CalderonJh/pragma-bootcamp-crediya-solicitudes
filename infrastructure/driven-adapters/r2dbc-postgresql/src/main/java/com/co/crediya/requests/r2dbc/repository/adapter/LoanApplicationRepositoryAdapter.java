@@ -22,9 +22,9 @@ public class LoanApplicationRepositoryAdapter
   }
 
   @Override
-  public Mono<Void> saveLoanApplication(LoanApplication loanApplication) {
+  public Mono<LoanApplication> saveLoanApplication(LoanApplication loanApplication) {
     LoanApplicationEntity entity = LoanApplicationMapper.toEntity(loanApplication);
-    return repository.save(entity).then();
+    return repository.save(entity).map(LoanApplicationMapper::toModel);
   }
 
   @Override

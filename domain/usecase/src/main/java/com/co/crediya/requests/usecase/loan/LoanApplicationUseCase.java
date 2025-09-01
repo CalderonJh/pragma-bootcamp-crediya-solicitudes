@@ -3,12 +3,15 @@ package com.co.crediya.requests.usecase.loan;
 import static com.co.crediya.requests.util.Constant.DEFAULT_LOAN_STATUS;
 import static com.co.crediya.requests.util.validation.ReactiveValidators.*;
 
+import com.co.crediya.requests.constant.RoleType;
 import com.co.crediya.requests.exception.DataNotFoundException;
 import com.co.crediya.requests.exception.InternalException;
+import com.co.crediya.requests.model.loanapplication.Actor;
 import com.co.crediya.requests.model.loanapplication.LoanApplication;
 import com.co.crediya.requests.model.loanapplication.gateways.LoanApplicationRepository;
 import com.co.crediya.requests.model.loanapplication.gateways.LoanStatusRepository;
 import com.co.crediya.requests.model.loanapplication.gateways.LoanTypeRepository;
+import com.co.crediya.requests.util.validation.RoleValidator;
 import java.util.UUID;
 import java.util.logging.Logger;
 import lombok.RequiredArgsConstructor;
@@ -22,14 +25,19 @@ public class LoanApplicationUseCase {
   private final LoanTypeRepository loanTypeRepository;
   private static final Logger logger = Logger.getLogger(LoanApplicationUseCase.class.getName());
 
-  public Mono<Void> applyForLoan(LoanApplication loanApplication) {
+  public Mono<Void> saveLoanApplication(LoanApplication loanApplication, Actor actor) {
     return Mono.just(loanApplication)
+        .flatMap(app -> validateActorRole(loanApplication, actor))
         .flatMap(this::validateConstraints)
         .flatMap(this::validateReferences)
         .flatMap(this::setDefaultLoanStatus)
-        .doOnNext(la -> logger.info("Saving loan application: %s".formatted(la.toString())))
         .flatMap(loanApplicationRepository::saveLoanApplication)
+        .doOnNext(la -> logger.info("Saved loan application: %s".formatted(la.toString())))
         .then();
+  }
+
+  private Mono<LoanApplication> validateActorRole(LoanApplication loanApplication, Actor actor) {
+    return RoleValidator.hasAnyRole(actor, RoleType.USER).thenReturn(loanApplication);
   }
 
   public Flux<LoanApplication> getAllLoanApplications() {

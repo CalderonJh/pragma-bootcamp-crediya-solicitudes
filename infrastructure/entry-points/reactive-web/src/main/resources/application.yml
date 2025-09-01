@@ -1,0 +1,3 @@
+security:
+  jwt:
+    public-key-path: ${JWT_PUBLIC_KEY_PATH:file:C:\rsakeys\crediya\auth\public.pem}

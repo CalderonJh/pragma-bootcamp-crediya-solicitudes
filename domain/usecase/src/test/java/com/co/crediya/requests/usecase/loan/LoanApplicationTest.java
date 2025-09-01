@@ -1,12 +1,16 @@
 package com.co.crediya.requests.usecase.loan;
 
 import static com.co.crediya.requests.util.validation.ReactiveValidators.MessageTemplate;
+import static com.co.crediya.requests.util.validation.RoleValidator.PERMISSION_DENIED_MESSAGE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
+import com.co.crediya.requests.constant.RoleType;
 import com.co.crediya.requests.exception.BusinessRuleException;
 import com.co.crediya.requests.exception.DataNotFoundException;
 import com.co.crediya.requests.exception.InternalException;
+import com.co.crediya.requests.exception.PermissionException;
+import com.co.crediya.requests.model.loanapplication.Actor;
 import com.co.crediya.requests.model.loanapplication.LoanApplication;
 import com.co.crediya.requests.model.loanapplication.LoanType;
 import com.co.crediya.requests.model.loanapplication.gateways.LoanApplicationRepository;
@@ -28,6 +32,7 @@ class LoanApplicationTest {
   private LoanTypeRepository loanTypeRepository;
   private LoanApplicationUseCase useCase;
   private LoanApplication loanApplication;
+  private Actor actor;
 
   @BeforeEach
   void setUp() {
@@ -47,6 +52,7 @@ class LoanApplicationTest {
             .loanType(new LoanType(UUID.randomUUID()))
             .loanStatus(null)
             .build();
+    actor = new Actor("email@email.com", RoleType.USER.getValue());
   }
 
   @Test
@@ -59,10 +65,23 @@ class LoanApplicationTest {
   }
 
   @Test
+  @DisplayName("Error if actor role is not USER")
+  void errorIfActorRoleIsNotUser() {
+    actor.setRole("OTHER");
+    StepVerifier.create(useCase.saveLoanApplication(loanApplication, actor))
+        .expectErrorSatisfies(
+            error ->
+                assertThat(error)
+                    .isInstanceOf(PermissionException.class)
+                    .hasMessage(PERMISSION_DENIED_MESSAGE))
+        .verify();
+  }
+
+  @Test
   @DisplayName("Error when email is invalid")
   void errorWhenEmailIsInvalid() {
     loanApplication.setApplicantEmail("invalid");
-    StepVerifier.create(useCase.applyForLoan(loanApplication))
+    StepVerifier.create(useCase.saveLoanApplication(loanApplication, actor))
         .expectErrorSatisfies(
             error ->
                 assertThat(error)
@@ -76,7 +95,7 @@ class LoanApplicationTest {
   void errorWhenLoanAmountIsInvalid() {
     loanApplication.setAmount(BigDecimal.valueOf(0));
 
-    StepVerifier.create(useCase.applyForLoan(loanApplication))
+    StepVerifier.create(useCase.saveLoanApplication(loanApplication, actor))
         .expectErrorSatisfies(
             e ->
                 assertThat(e)
@@ -89,7 +108,7 @@ class LoanApplicationTest {
   @DisplayName("Error when loan term is negative")
   void errorWhenLoanTermIsInvalid() {
     loanApplication.setTermInMonths(-1);
-    StepVerifier.create(useCase.applyForLoan(loanApplication))
+    StepVerifier.create(useCase.saveLoanApplication(loanApplication, actor))
         .expectErrorSatisfies(
             e ->
                 assertThat(e)
@@ -103,7 +122,7 @@ class LoanApplicationTest {
   void errorWhenLoanTypeDoesNotExist() {
     when(loanTypeRepository.findLoanTypeById(loanApplication.getLoanType().getId()))
         .thenReturn(Mono.empty());
-    StepVerifier.create(useCase.applyForLoan(loanApplication))
+    StepVerifier.create(useCase.saveLoanApplication(loanApplication, actor))
         .expectErrorSatisfies(
             e ->
                 assertThat(e)
@@ -119,7 +138,7 @@ class LoanApplicationTest {
         .thenReturn(Mono.just(new LoanType(loanApplication.getLoanType().getId())));
     when(loanStatusRepository.findLoanStatusByName(Constant.DEFAULT_LOAN_STATUS))
         .thenReturn(Mono.empty());
-    StepVerifier.create(useCase.applyForLoan(loanApplication))
+    StepVerifier.create(useCase.saveLoanApplication(loanApplication, actor))
         .expectErrorSatisfies(
             e ->
                 assertThat(e)
@@ -140,7 +159,7 @@ class LoanApplicationTest {
                     UUID.randomUUID(), Constant.DEFAULT_LOAN_STATUS, "")));
     when(loanApplicationRepository.saveLoanApplication(loanApplication)).thenReturn(Mono.empty());
 
-    StepVerifier.create(useCase.applyForLoan(loanApplication)).verifyComplete();
+    StepVerifier.create(useCase.saveLoanApplication(loanApplication, actor)).verifyComplete();
 
     verify(loanTypeRepository).findLoanTypeById(loanApplication.getLoanType().getId());
     verify(loanStatusRepository).findLoanStatusByName(Constant.DEFAULT_LOAN_STATUS);

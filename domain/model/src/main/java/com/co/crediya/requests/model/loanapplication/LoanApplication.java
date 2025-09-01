@@ -4,8 +4,7 @@ import java.math.BigDecimal;
 import java.util.UUID;
 import lombok.*;
 
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder(toBuilder = true)
@@ -16,4 +15,5 @@ public class LoanApplication {
   private Integer termInMonths;
   private LoanType loanType;
   private LoanStatus loanStatus;
+
 }
