@@ -4,6 +4,7 @@ import com.co.crediya.requests.api.client.AuthClient;
 import com.co.crediya.requests.api.dto.LoanApplicationDTO;
 import com.co.crediya.requests.api.dto.UserDTO;
 import com.co.crediya.requests.api.mapper.LoanApplicationMapper;
+import com.co.crediya.requests.exception.DataNotFoundException;
 import com.co.crediya.requests.model.loanapplication.Actor;
 import com.co.crediya.requests.model.loanapplication.LoanApplication;
 import com.co.crediya.requests.usecase.loan.LoanApplicationUseCase;
@@ -12,6 +13,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.UUID;
 import java.util.logging.Logger;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +28,7 @@ import reactor.core.publisher.Mono;
 
 @Component
 @RequiredArgsConstructor
+@Tag(name = "Solicitudes de crédito")
 public class Handler {
   private final LoanApplicationUseCase useCase;
   private final AuthClient authClient;
@@ -52,13 +55,14 @@ public class Handler {
               Mono<UserDTO> user =
                   authClient
                       .getUser(actorId, jwt.getTokenValue())
+                      .switchIfEmpty(Mono.error(new DataNotFoundException("User not found")))
                       .doOnNext(
                           u -> logger.info("Fetched user details: %s".formatted(u.toString())));
               return user.zipWith(loanApplicationBody)
                   .flatMap(
                       tuple -> {
                         LoanApplication loanApplication =
-                            LoanApplicationMapper.toModel(tuple.getT2());
+                            LoanApplicationMapper.toModel(tuple.getT2(), tuple.getT1().getEmail());
                         return useCase.saveLoanApplication(
                             loanApplication,
                             new Actor(tuple.getT1().getEmail(), tuple.getT1().getRole()));

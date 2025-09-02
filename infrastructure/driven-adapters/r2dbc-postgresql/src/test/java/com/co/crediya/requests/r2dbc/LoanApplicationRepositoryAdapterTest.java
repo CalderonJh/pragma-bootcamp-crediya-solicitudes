@@ -1,5 +1,6 @@
 package com.co.crediya.requests.r2dbc;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -39,8 +40,15 @@ class LoanApplicationRepositoryAdapterTest {
 
     when(repository.save(any(LoanApplicationEntity.class))).thenReturn(Mono.just(entity));
 
-    Mono<Void> result = repositoryAdapter.saveLoanApplication(loan);
+    Mono<LoanApplication> result = repositoryAdapter.saveLoanApplication(loan);
 
-    StepVerifier.create(result).verifyComplete();
+    StepVerifier.create(result)
+        .assertNext(
+            la -> {
+              assertThat(la.getApplicantEmail()).isEqualTo("email@email.com");
+              assertThat(la.getLoanType().getId()).isNotNull();
+              assertThat(la.getLoanStatus().getId()).isEqualTo(loan.getLoanStatus().getId());
+            })
+        .verifyComplete();
   }
 }

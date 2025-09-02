@@ -29,7 +29,19 @@ public class SecurityConfig {
   public SecurityWebFilterChain springSecurityFilterChain(
       ServerHttpSecurity http, ReactiveJwtDecoder jwtDecoder) {
     return http.csrf(ServerHttpSecurity.CsrfSpec::disable)
-        .authorizeExchange(ex -> ex.anyExchange().authenticated())
+        .httpBasic(ServerHttpSecurity.HttpBasicSpec::disable)
+        .formLogin(ServerHttpSecurity.FormLoginSpec::disable)
+        .authorizeExchange(
+            ex ->
+                ex.pathMatchers(
+                        "/actuator/**",
+                        "/health",
+                        "/public/**",
+                        "/webjars/swagger-ui/**",
+                        "/v3/api-docs/**")
+                    .permitAll()
+                    .anyExchange()
+                    .authenticated())
         .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtDecoder(jwtDecoder)))
         .build();
   }

@@ -9,7 +9,6 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class LoanApplicationDTO {
-  private String applicantEmail;
   private BigDecimal amount;
   private Integer termInMonths;
   private UUID loanTypeId;

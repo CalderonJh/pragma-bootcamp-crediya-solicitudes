@@ -8,9 +8,9 @@ public class LoanApplicationMapper {
 
   private LoanApplicationMapper() {}
 
-  public static LoanApplication toModel(LoanApplicationDTO dto) {
+  public static LoanApplication toModel(LoanApplicationDTO dto, String email) {
     return LoanApplication.builder()
-        .applicantEmail(dto.getApplicantEmail())
+        .applicantEmail(email)
         .amount(dto.getAmount())
         .termInMonths(dto.getTermInMonths())
         .loanType(new LoanType(dto.getLoanTypeId()))
