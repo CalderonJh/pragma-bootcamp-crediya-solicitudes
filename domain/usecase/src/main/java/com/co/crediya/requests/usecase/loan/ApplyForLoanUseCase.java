@@ -19,13 +19,13 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @RequiredArgsConstructor
-public class LoanApplicationUseCase {
+public class ApplyForLoanUseCase {
   private final LoanApplicationRepository loanApplicationRepository;
   private final LoanStatusRepository loanStatusRepository;
   private final LoanTypeRepository loanTypeRepository;
-  private static final Logger logger = Logger.getLogger(LoanApplicationUseCase.class.getName());
+  private static final Logger logger = Logger.getLogger(ApplyForLoanUseCase.class.getName());
 
-  public Mono<Void> saveLoanApplication(LoanApplication loanApplication, Actor actor) {
+  public Mono<Void> execute(LoanApplication loanApplication, Actor actor) {
     return Mono.just(loanApplication)
         .flatMap(app -> validateActorRole(loanApplication, actor))
         .flatMap(this::validateConstraints)
@@ -37,7 +37,7 @@ public class LoanApplicationUseCase {
   }
 
   private Mono<LoanApplication> validateActorRole(LoanApplication loanApplication, Actor actor) {
-    return RoleValidator.hasAnyRole(actor, RoleType.USER).thenReturn(loanApplication);
+    return RoleValidator.hasRole(actor, RoleType.USER).thenReturn(loanApplication);
   }
 
   public Flux<LoanApplication> getAllLoanApplications() {
@@ -45,7 +45,7 @@ public class LoanApplicationUseCase {
   }
 
   private Mono<LoanApplication> validateConstraints(LoanApplication loanApplication) {
-    return email(loanApplication.getApplicantEmail())
+    return notNull(loanApplication.getApplicantId(), "Applicant id")
         .then(positive(loanApplication.getAmount(), "Loan amount"))
         .then(positive(loanApplication.getTermInMonths(), "Loan term"))
         .thenReturn(loanApplication);

@@ -11,6 +11,7 @@ import lombok.*;
 @AllArgsConstructor
 public class LoanType {
   private UUID id;
+	private String description;
   private BigDecimal minAmount;
   private BigDecimal maxAmount;
   private BigDecimal interestRate;

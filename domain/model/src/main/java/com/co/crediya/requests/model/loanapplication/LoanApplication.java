@@ -10,10 +10,9 @@ import lombok.*;
 @Builder(toBuilder = true)
 public class LoanApplication {
   private UUID id;
-  private String applicantEmail;
+  private UUID applicantId;
   private BigDecimal amount;
   private Integer termInMonths;
   private LoanType loanType;
   private LoanStatus loanStatus;
-
 }

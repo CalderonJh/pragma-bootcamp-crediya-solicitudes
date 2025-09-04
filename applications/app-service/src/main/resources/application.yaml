@@ -1,6 +1,14 @@
+logging:
+  level:
+    org.springframework.r2dbc.core: DEBUG
+    io.r2dbc.postgresql.QUERY: DEBUG
 server:
   port: 8080
 spring:
+  r2dbc:
+    properties:
+      logger:
+        level: DEBUG
   application:
     name: "Requests"
   devtools:

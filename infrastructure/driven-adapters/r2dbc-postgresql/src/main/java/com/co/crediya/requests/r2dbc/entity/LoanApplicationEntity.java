@@ -18,8 +18,8 @@ public class LoanApplicationEntity {
   @Column("id_solicitud")
   private UUID id;
 
-  @Column("email")
-  private String applicantEmail;
+  @Column("applicant_id")
+  private UUID applicantId;
 
   @Column("monto")
   private BigDecimal amount;

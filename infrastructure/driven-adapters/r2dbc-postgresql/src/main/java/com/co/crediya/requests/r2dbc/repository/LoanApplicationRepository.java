@@ -16,7 +16,7 @@ public interface LoanApplicationRepository
       """
        SELECT
              s.id_solicitud          AS id,
-             s.email                 AS applicant_email,
+             s.applicant_id          AS applicant_id,
              s.monto                 AS amount,
              s.plazo                 AS term_in_months,
 

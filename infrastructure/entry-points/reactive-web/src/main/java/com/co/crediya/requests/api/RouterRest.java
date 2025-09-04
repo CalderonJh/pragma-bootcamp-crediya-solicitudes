@@ -27,12 +27,12 @@ public class RouterRest {
         path = "/api/v1/solicitudes",
         method = RequestMethod.GET,
         beanClass = Handler.class,
-        beanMethod = "listenGETAllLoanApplications")
+        beanMethod = "listenGETLoanApplicationsPage")
   })
   @Bean
   public RouterFunction<ServerResponse> routerFunction(Handler handler) {
     return route(POST("/api/v1/solicitud"), handler::listenPOSTApplyForLoan)
-        .and(route(GET("/api/v1/solicitudes"), s -> handler.listenGETAllLoanApplications()));
+        .and(route(GET("/api/v1/solicitudes"), handler::listenGETLoanApplicationsPage));
   }
 
   @Bean

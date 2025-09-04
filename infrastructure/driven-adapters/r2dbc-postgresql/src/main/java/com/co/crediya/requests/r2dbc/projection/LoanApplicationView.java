@@ -12,8 +12,8 @@ public class LoanApplicationView {
   @Column("id")
   private UUID id;
 
-  @Column("applicant_email")
-  private String applicantEmail;
+  @Column("applicant_id")
+  private UUID applicantId;
 
   @Column("amount")
   private BigDecimal amount;
@@ -23,6 +23,9 @@ public class LoanApplicationView {
 
   @Column("loan_type_id")
   private UUID loanTypeId;
+
+  @Column("loan_type")
+  private String loanTypeDescription;
 
   @Column("loan_type_min_amount")
   private BigDecimal loanTypeMinAmount;
@@ -39,7 +42,7 @@ public class LoanApplicationView {
   @Column("loan_status_id")
   private UUID loanStatusId;
 
-  @Column("loan_status_name")
+  @Column("loan_status")
   private String loanStatusName;
 
   @Column("loan_status_description")

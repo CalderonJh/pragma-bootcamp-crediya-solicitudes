@@ -1,21 +1,35 @@
 package com.co.crediya.requests.api;
 
-import com.co.crediya.requests.api.client.AuthClient;
+import static com.co.crediya.requests.api.util.Constant.LOAN_STATUS_ID_PARAM;
+import static com.co.crediya.requests.api.util.WebTools.extractPageable;
+
+import com.co.crediya.requests.api.client.AuthServiceClient;
+import com.co.crediya.requests.api.dto.CreateLoanApplicationDTO;
+import com.co.crediya.requests.api.dto.LoanApplicantDTO;
 import com.co.crediya.requests.api.dto.LoanApplicationDTO;
 import com.co.crediya.requests.api.dto.UserDTO;
 import com.co.crediya.requests.api.mapper.LoanApplicationMapper;
+import com.co.crediya.requests.api.util.ApiClient;
+import com.co.crediya.requests.api.util.WebTools;
 import com.co.crediya.requests.exception.DataNotFoundException;
 import com.co.crediya.requests.model.loanapplication.Actor;
 import com.co.crediya.requests.model.loanapplication.LoanApplication;
-import com.co.crediya.requests.usecase.loan.LoanApplicationUseCase;
+import com.co.crediya.requests.model.loanapplication.LoanApplicationFilter;
+import com.co.crediya.requests.model.util.pagination.Page;
+import com.co.crediya.requests.usecase.loan.ApplyForLoanUseCase;
+import com.co.crediya.requests.usecase.loan.FindLoanApplicationsUseCase;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -30,8 +44,9 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 @Tag(name = "Solicitudes de crédito")
 public class Handler {
-  private final LoanApplicationUseCase useCase;
-  private final AuthClient authClient;
+  private final ApplyForLoanUseCase applyForLoanUseCase;
+  private final FindLoanApplicationsUseCase findLoanApplicationsUseCase;
+  private final AuthServiceClient authServiceClient;
   private static final Logger logger = Logger.getLogger(Handler.class.getName());
 
   @Operation(
@@ -39,11 +54,12 @@ public class Handler {
       summary = "Registra una nueva solicitud de préstamo",
       requestBody =
           @RequestBody(
-              content = @Content(schema = @Schema(implementation = LoanApplicationDTO.class))),
+              content =
+                  @Content(schema = @Schema(implementation = CreateLoanApplicationDTO.class))),
       responses = {@ApiResponse(responseCode = "201", content = @Content())})
   public Mono<ServerResponse> listenPOSTApplyForLoan(ServerRequest serverRequest) {
-    Mono<LoanApplicationDTO> loanApplicationBody =
-        serverRequest.bodyToMono(LoanApplicationDTO.class);
+    Mono<CreateLoanApplicationDTO> loanApplicationBody =
+        serverRequest.bodyToMono(CreateLoanApplicationDTO.class);
     return serverRequest
         .principal()
         .cast(JwtAuthenticationToken.class)
@@ -53,7 +69,7 @@ public class Handler {
               UUID actorId = UUID.fromString(jwt.getSubject());
               // call auth ms to get user details
               Mono<UserDTO> user =
-                  authClient
+                  authServiceClient
                       .getUser(actorId, jwt.getTokenValue())
                       .switchIfEmpty(Mono.error(new DataNotFoundException("User not found")))
                       .doOnNext(
@@ -62,29 +78,72 @@ public class Handler {
                   .flatMap(
                       tuple -> {
                         LoanApplication loanApplication =
-                            LoanApplicationMapper.toModel(tuple.getT2(), tuple.getT1().getEmail());
-                        return useCase.saveLoanApplication(
-                            loanApplication,
-                            new Actor(tuple.getT1().getEmail(), tuple.getT1().getRole()));
+                            LoanApplicationMapper.toModel(tuple.getT2(), actorId);
+                        UserDTO applicant = tuple.getT1();
+                        return applyForLoanUseCase.execute(
+                            loanApplication, new Actor(applicant.id(), applicant.role()));
                       });
             })
         .then(ServerResponse.status(HttpStatus.CREATED).build());
   }
 
   @Operation(
-      operationId = "getAllLoanApplications",
-      summary = "Consulta todas las solicitudes de préstamo",
-      requestBody =
-          @RequestBody(
-              content = @Content(schema = @Schema(implementation = LoanApplicationDTO.class))),
+      operationId = "listenGETLoanApplicationsPage",
+      summary = "Consulta solicitudes de préstamo",
       responses = {
         @ApiResponse(
             responseCode = "200",
-            content = @Content(schema = @Schema(implementation = LoanApplication.class)))
+            content = @Content(schema = @Schema(implementation = LoanApplicationDTO.class)))
       })
-  public Mono<ServerResponse> listenGETAllLoanApplications() {
-    return ServerResponse.ok()
-        .contentType(MediaType.APPLICATION_JSON)
-        .body(useCase.getAllLoanApplications(), LoanApplication.class);
+  @Parameter(name = "page", description = "Número de página (0-indexado)", example = "0")
+  @Parameter(name = "size", description = "Tamaño de página", example = "20")
+  @Parameter(name = "sort", description = "Criterios de ordenamiento", example = "amount,asc")
+  @Parameter(name = "statusId", description = "Filtra por id de estado de la solicitud")
+  public Mono<ServerResponse> listenGETLoanApplicationsPage(ServerRequest serverRequest) {
+    return WebTools.extractApiClient(serverRequest)
+        .flatMap(
+            apiClient -> {
+              UUID statusId =
+                  serverRequest.queryParam(LOAN_STATUS_ID_PARAM).map(UUID::fromString).orElse(null);
+              return findLoanApplicationsUseCase
+                  .execute(
+                      extractPageable(serverRequest),
+                      new LoanApplicationFilter(statusId),
+                      apiClient.actor())
+                  .flatMap(page -> mapToLoanApplicationsWithApplicantInfo(page, apiClient))
+                  .flatMap(
+                      page ->
+                          ServerResponse.ok()
+                              .contentType(MediaType.APPLICATION_JSON)
+                              .bodyValue(page));
+            });
+  }
+
+  private Mono<Page<LoanApplicationDTO>> mapToLoanApplicationsWithApplicantInfo(
+      Page<LoanApplication> loanApplicationPage, ApiClient apiClient) {
+
+    Set<UUID> applicantIdSet =
+        loanApplicationPage.getContent().stream()
+            .map(LoanApplication::getApplicantId)
+            .collect(Collectors.toSet());
+
+    return authServiceClient
+        .getApplicants(applicantIdSet, apiClient.jwt())
+        .collectMap(LoanApplicantDTO::id, dto -> dto)
+        .map(
+            applicantMap -> {
+              List<LoanApplicationDTO> pageContent =
+                  loanApplicationPage.getContent().stream()
+                      .map(
+                          app ->
+                              LoanApplicationMapper.toResponse(
+                                  app, applicantMap.get(app.getApplicantId())))
+                      .toList();
+
+              return new Page<>(
+                  pageContent,
+                  loanApplicationPage.getPageable(),
+                  loanApplicationPage.getTotalElements());
+            });
   }
 }
