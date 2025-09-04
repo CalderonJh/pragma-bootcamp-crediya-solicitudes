@@ -15,7 +15,6 @@ import com.co.crediya.requests.util.validation.RoleValidator;
 import java.util.UUID;
 import java.util.logging.Logger;
 import lombok.RequiredArgsConstructor;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @RequiredArgsConstructor
@@ -38,10 +37,6 @@ public class ApplyForLoanUseCase {
 
   private Mono<LoanApplication> validateActorRole(LoanApplication loanApplication, Actor actor) {
     return RoleValidator.hasRole(actor, RoleType.USER).thenReturn(loanApplication);
-  }
-
-  public Flux<LoanApplication> getAllLoanApplications() {
-    return loanApplicationRepository.getLoanApplications();
   }
 
   private Mono<LoanApplication> validateConstraints(LoanApplication loanApplication) {

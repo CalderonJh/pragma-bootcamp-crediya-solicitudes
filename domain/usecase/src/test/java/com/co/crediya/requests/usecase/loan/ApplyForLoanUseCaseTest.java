@@ -22,11 +22,10 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
-class LoanApplicationTest {
+class ApplyForLoanUseCaseTest {
   private LoanApplicationRepository loanApplicationRepository;
   private LoanStatusRepository loanStatusRepository;
   private LoanTypeRepository loanTypeRepository;
@@ -53,15 +52,6 @@ class LoanApplicationTest {
             .loanStatus(null)
             .build();
     actor = new Actor(UUID.randomUUID(), RoleType.USER.getValue());
-  }
-
-  @Test
-  @DisplayName("Get all loan application calls repository method")
-  void getAllLoanApplications() {
-    doReturn(Flux.empty()).when(loanApplicationRepository).getLoanApplications();
-    Flux<LoanApplication> result = useCase.getAllLoanApplications();
-    StepVerifier.create(result).expectNextCount(0).verifyComplete();
-    verify(loanApplicationRepository).getLoanApplications();
   }
 
   @Test

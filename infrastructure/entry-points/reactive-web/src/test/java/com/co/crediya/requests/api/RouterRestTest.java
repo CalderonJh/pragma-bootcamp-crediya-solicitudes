@@ -19,7 +19,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @WebFluxTest
@@ -50,20 +49,5 @@ class RouterRestTest {
         .isCreated()
         .expectBody()
         .isEmpty();
-  }
-
-  @Test
-  @DisplayName("GET - All Loan Applications")
-  void testListenGETAllApplications() {
-    when(applyForLoanUseCase.getAllLoanApplications()).thenReturn(Flux.empty());
-    webTestClient
-        .get()
-        .uri("/api/v1/solicitudes")
-        .accept(MediaType.APPLICATION_JSON)
-        .exchange()
-        .expectStatus()
-        .isOk()
-        .expectBody()
-        .json("[]");
   }
 }
