@@ -3,7 +3,7 @@ logging:
     org.springframework.r2dbc.core: DEBUG
     io.r2dbc.postgresql.QUERY: DEBUG
 server:
-  port: 8080
+  port: 8082
 spring:
   r2dbc:
     properties:
@@ -31,12 +31,11 @@ management:
 cors:
   allowed-origins: "http://localhost:4200,http://localhost:8080"
 
-
 adapters:
   r2dbc:
-    host: "localhost"
-    port: 5433
-    database: "crediya-solicitudes"
-    schema: "public"
-    username: "calderonjh"
-    password: "securepass"
+    host: ${DB_HOST}
+    port: ${DB_PORT}
+    database: ${DB_NAME_LOAN}
+    schema: ${DB_SCHEMA:public}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}

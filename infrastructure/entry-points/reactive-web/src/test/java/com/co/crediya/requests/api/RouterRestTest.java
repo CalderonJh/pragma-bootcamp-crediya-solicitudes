@@ -9,6 +9,7 @@ import com.co.crediya.requests.api.config.TestSecurityConfig;
 import com.co.crediya.requests.api.dto.CreateLoanApplicationDTO;
 import com.co.crediya.requests.api.dto.UserDTO;
 import com.co.crediya.requests.usecase.loan.ApplyForLoanUseCase;
+import com.co.crediya.requests.usecase.loan.FindLoanApplicationsUseCase;
 import java.math.BigDecimal;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
@@ -27,8 +28,9 @@ class RouterRestTest {
 
   @Autowired private WebTestClient webTestClient;
   @MockitoBean private ApplyForLoanUseCase applyForLoanUseCase;
+  @MockitoBean private FindLoanApplicationsUseCase findLoanApplicationsUseCase;
   @MockitoBean private AuthServiceClient authServiceClient;
-
+	
   @Test
   @DisplayName("POST - Apply for Loan")
   void testListenPOSTApplyForLoan() {

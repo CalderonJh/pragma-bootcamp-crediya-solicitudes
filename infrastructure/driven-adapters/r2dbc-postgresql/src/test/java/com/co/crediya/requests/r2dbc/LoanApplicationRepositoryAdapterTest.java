@@ -32,7 +32,7 @@ class LoanApplicationRepositoryAdapterTest {
     LoanApplication loan =
         LoanApplication.builder()
             .id(UUID.randomUUID())
-            .applicantEmail("email@email.com")
+            .applicantId(UUID.randomUUID())
             .loanType(new LoanType(UUID.randomUUID()))
             .loanStatus(new LoanStatus(UUID.randomUUID(), "PENDING", "Pending"))
             .build();
@@ -45,7 +45,7 @@ class LoanApplicationRepositoryAdapterTest {
     StepVerifier.create(result)
         .assertNext(
             la -> {
-              assertThat(la.getApplicantEmail()).isEqualTo("email@email.com");
+              assertThat(la.getApplicantId()).isEqualTo(loan.getApplicantId());
               assertThat(la.getLoanType().getId()).isNotNull();
               assertThat(la.getLoanStatus().getId()).isEqualTo(loan.getLoanStatus().getId());
             })

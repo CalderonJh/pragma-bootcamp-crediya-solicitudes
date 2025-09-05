@@ -1,3 +1,7 @@
 security:
   jwt:
     public-key-path: ${JWT_PUBLIC_KEY_PATH:file:C:\rsakeys\crediya\auth\public.pem}
+
+services:
+  auth:
+    url: http://auth-service:8081/api/v1
