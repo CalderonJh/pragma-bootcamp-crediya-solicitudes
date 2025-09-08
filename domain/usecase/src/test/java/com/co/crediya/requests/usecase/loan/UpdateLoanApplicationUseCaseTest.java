@@ -72,7 +72,7 @@ class UpdateLoanApplicationUseCaseTest {
 
     Actor actor = new Actor(UUID.randomUUID(), RoleType.CONSULTANT.getValue());
 
-    StepVerifier.create(useCase.updateStatus(applicationId, statusId, actor))
+    StepVerifier.create(useCase.execute(applicationId, statusId, actor))
         .expectNextMatches(
             updated ->
                 updated.getLoanStatus().getId().equals(statusId)
@@ -96,7 +96,7 @@ class UpdateLoanApplicationUseCaseTest {
 
     when(loanApplicationRepository.getById(applicationId)).thenReturn(Mono.empty());
 
-    StepVerifier.create(useCase.updateStatus(applicationId, statusId, actor))
+    StepVerifier.create(useCase.execute(applicationId, statusId, actor))
         .expectErrorMatches(
             ex ->
                 ex instanceof DataNotFoundException
@@ -120,7 +120,7 @@ class UpdateLoanApplicationUseCaseTest {
     when(loanApplicationRepository.getById(applicationId)).thenReturn(Mono.just(loanApplication));
     when(loanStatusRepository.getById(statusId)).thenReturn(Mono.empty());
 
-    StepVerifier.create(useCase.updateStatus(applicationId, statusId, actor))
+    StepVerifier.create(useCase.execute(applicationId, statusId, actor))
         .expectErrorMatches(
             ex ->
                 ex instanceof DataNotFoundException
@@ -151,7 +151,7 @@ class UpdateLoanApplicationUseCaseTest {
         .thenAnswer(inv -> Mono.just(inv.getArgument(0)));
     when(emailMessageRepository.getByKey(any())).thenReturn(Mono.empty());
 
-    StepVerifier.create(useCase.updateStatus(applicationId, statusId, actor))
+    StepVerifier.create(useCase.execute(applicationId, statusId, actor))
         .expectErrorMatches(
             ex ->
                 ex instanceof DataNotFoundException
@@ -170,7 +170,7 @@ class UpdateLoanApplicationUseCaseTest {
     UUID statusId = UUID.randomUUID();
     Actor actor = new Actor(UUID.randomUUID(), RoleType.USER.getValue()); // not CONSULTANT
 
-    StepVerifier.create(useCase.updateStatus(applicationId, statusId, actor))
+    StepVerifier.create(useCase.execute(applicationId, statusId, actor))
         .expectError(PermissionException.class)
         .verify();
 

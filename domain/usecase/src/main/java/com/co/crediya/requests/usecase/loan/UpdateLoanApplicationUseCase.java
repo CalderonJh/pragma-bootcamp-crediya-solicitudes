@@ -26,37 +26,12 @@ public class UpdateLoanApplicationUseCase {
   private final UserNotificationService userNotificationService;
   private final EmailMessageRepository emailMessageRepository;
 
-  public Mono<LoanApplication> updateStatus(UUID applicationId, UUID statusId, Actor actor) {
+  public Mono<LoanApplication> execute(UUID applicationId, UUID statusId, Actor actor) {
     return validateRole(actor)
         .then(validateInputs(applicationId, statusId))
         .then(Mono.defer(() -> findLoanApplication(applicationId)))
         .flatMap(apl -> updateLoanStatus(apl, statusId))
-        .flatMap(
-            apl -> {
-              String loanStatusName = apl.getLoanStatus().getName();
-              if (NotifyStatusType.mustNotify(loanStatusName)) {
-                return notifyUser(apl.getApplicantId(), loanStatusName).thenReturn(apl);
-              }
-              return Mono.just(apl);
-            });
-  }
-
-  private Mono<String> notifyUser(UUID applicantId, String loanStatusName) {
-    return emailMessageRepository
-        .getByKey(NotifyStatusType.fromDBValue(loanStatusName).getMsgKey())
-        .switchIfEmpty(
-            Mono.error(
-                new DataNotFoundException(
-                    MessageTemplate.NOT_FOUND.render("Email message template"))))
-        .flatMap(
-            emailMessage ->
-                userNotificationService.sendNotificationByEmail(applicantId, emailMessage))
-        .doOnNext(
-            msgId ->
-                logger.info(
-                    () ->
-                        "Notify to user %s about application status change to '%s'. Notification sent with message id %s"
-                            .formatted(applicantId, loanStatusName, msgId)));
+        .flatMap(this::notifyUserIfNeeded);
   }
 
   private Mono<Actor> validateRole(Actor actor) {
@@ -85,5 +60,31 @@ public class UpdateLoanApplicationUseCase {
               loanApplication.setLoanStatus(loanStatus);
               return loanApplicationRepository.saveLoanApplication(loanApplication);
             });
+  }
+
+  private Mono<LoanApplication> notifyUserIfNeeded(LoanApplication apl) {
+    String loanStatusName = apl.getLoanStatus().getName();
+    if (NotifyStatusType.mustNotify(loanStatusName)) {
+      return notifyUser(apl.getApplicantId(), loanStatusName).thenReturn(apl);
+    }
+    return Mono.just(apl);
+  }
+
+  private Mono<String> notifyUser(UUID applicantId, String loanStatusName) {
+    return emailMessageRepository
+        .getByKey(NotifyStatusType.fromDBValue(loanStatusName).getMsgKey())
+        .switchIfEmpty(
+            Mono.error(
+                new DataNotFoundException(
+                    MessageTemplate.NOT_FOUND.render("Email message template"))))
+        .flatMap(
+            emailMessage ->
+                userNotificationService.sendNotificationByEmail(applicantId, emailMessage))
+        .doOnNext(
+            msgId ->
+                logger.info(
+                    () ->
+                        "Notify to user %s about application status change to '%s'. Notification sent with message id %s"
+                            .formatted(applicantId, loanStatusName, msgId)));
   }
 }

@@ -152,6 +152,16 @@ public class LoanApplicationsHandler {
             });
   }
 
+  @Operation(
+      operationId = "updateLoanAplStatus",
+      summary = "Actualizar el estado de una solicitud de crédito",
+      responses = {
+        @ApiResponse(
+            responseCode = "200",
+            content = @Content(schema = @Schema(implementation = LoanApplication.class)))
+      })
+  @Parameter(name = "applicationId", description = "Id de la solicitud", example = "uuid")
+  @Parameter(name = "statusId", description = "Estado a asignar", example = "uuid")
   public Mono<ServerResponse> updateLoanAplStatus(ServerRequest serverRequest) {
     return WebTools.extractActor(serverRequest)
         .flatMap(
@@ -159,7 +169,7 @@ public class LoanApplicationsHandler {
               Optional<String> applicationId = serverRequest.queryParam(LOAN_APL_ID_PARAM);
               Optional<String> statusId = serverRequest.queryParam(LOAN_STATUS_ID_PARAM);
               return updateLoanApplicationUseCase
-                  .updateStatus(
+                  .execute(
                       applicationId.map(UUID::fromString).orElse(null),
                       statusId.map(UUID::fromString).orElse(null),
                       actor)

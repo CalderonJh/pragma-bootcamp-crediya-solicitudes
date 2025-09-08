@@ -24,6 +24,7 @@ public class LoanApplicationMapper {
 
   public static LoanApplicationDTO toResponse(LoanApplication model, LoanApplicantDTO applicant) {
     return new LoanApplicationDTO(
+        model.getId(),
         applicant,
         model.getAmount(),
         model.getTermInMonths(),

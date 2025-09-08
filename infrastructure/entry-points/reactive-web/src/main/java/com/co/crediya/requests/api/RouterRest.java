@@ -28,7 +28,7 @@ public class RouterRest {
         beanClass = LoanApplicationsHandler.class,
         beanMethod = "getLoanApplicationsPage"),
     @RouterOperation(
-        path = "/api/v1/solicitudes",
+        path = "/api/v1/solicitudes/estado",
         method = RequestMethod.PATCH,
         beanClass = LoanApplicationsHandler.class,
         beanMethod = "updateLoanAplStatus")
