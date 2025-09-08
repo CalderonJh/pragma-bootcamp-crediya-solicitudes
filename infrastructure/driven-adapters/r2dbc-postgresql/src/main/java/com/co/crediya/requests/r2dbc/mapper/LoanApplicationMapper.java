@@ -3,7 +3,7 @@ package com.co.crediya.requests.r2dbc.mapper;
 import com.co.crediya.requests.model.loanapplication.LoanApplication;
 import com.co.crediya.requests.model.loanapplication.LoanStatus;
 import com.co.crediya.requests.model.loanapplication.LoanType;
-import com.co.crediya.requests.r2dbc.entity.LoanApplicationEntity;
+import com.co.crediya.requests.r2dbc.entity.loan.LoanApplicationEntity;
 import com.co.crediya.requests.r2dbc.projection.LoanApplicationView;
 
 public class LoanApplicationMapper {
@@ -16,17 +16,6 @@ public class LoanApplicationMapper {
         .termInMonths(loanApplication.getTermInMonths())
         .loanTypeId(loanApplication.getLoanType().getId())
         .loanStatusId(loanApplication.getLoanStatus().getId())
-        .build();
-  }
-
-  public static LoanApplication toModel(LoanApplicationEntity entity) {
-    return LoanApplication.builder()
-        .id(entity.getId())
-        .applicantId(entity.getApplicantId())
-        .amount(entity.getAmount())
-        .termInMonths(entity.getTermInMonths())
-        .loanType(LoanType.builder().id(entity.getLoanTypeId()).build())
-        .loanStatus(LoanStatus.builder().id(entity.getLoanStatusId()).build())
         .build();
   }
 

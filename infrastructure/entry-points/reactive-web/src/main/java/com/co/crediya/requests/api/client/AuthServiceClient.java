@@ -17,15 +17,20 @@ public class AuthServiceClient {
   private final WebClient webClient;
 
   public AuthServiceClient(
-      WebClient.Builder builder, @Value("${services.auth.url}") String authUrl) {
-    this.webClient = builder.baseUrl(authUrl).build();
+      WebClient.Builder builder,
+      @Value("${services.auth.url}") String authUrl,
+      @Value("${services.auth.api-key}") String apiKey) {
+    this.webClient =
+        builder
+            .baseUrl(authUrl)
+            .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + apiKey)
+            .build();
   }
 
-  public Mono<UserDTO> getUser(UUID id, String jwt) {
+  public Mono<UserDTO> getUser(UUID id) {
     return webClient
         .get()
         .uri("/usuarios/{id}", id)
-        .header("Authorization", "Bearer " + jwt)
         .retrieve()
         .bodyToMono(UserDTO.class);
   }

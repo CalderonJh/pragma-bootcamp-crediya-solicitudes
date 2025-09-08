@@ -1,6 +1,7 @@
-package com.co.crediya.requests.util;
+package com.co.crediya.requests.constant;
 
 public class Constant {
   private Constant() {}
+
   public static final String DEFAULT_LOAN_STATUS = "PENDIENTE";
 }

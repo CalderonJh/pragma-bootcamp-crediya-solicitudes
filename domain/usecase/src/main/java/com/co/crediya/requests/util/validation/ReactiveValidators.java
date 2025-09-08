@@ -3,26 +3,10 @@ package com.co.crediya.requests.util.validation;
 import static com.co.crediya.requests.util.validation.ValidationUtils.*;
 
 import com.co.crediya.requests.exception.BusinessRuleException;
-import lombok.AllArgsConstructor;
 import reactor.core.publisher.Mono;
 
 public class ReactiveValidators {
   private ReactiveValidators() {}
-
-  @AllArgsConstructor
-  public enum MessageTemplate {
-    EMAIL("The email format is invalid"),
-    NOT_NULL("%s must not be null"),
-    NOT_EMPTY("%s must not be empty"),
-    POSITIVE("%s must be positive"),
-    RANGE("%s must be between %s and %s");
-    private final String template;
-
-    public String render(Object... params) {
-      if (params == null || params.length == 0) return this.template;
-      return String.format(this.template, params);
-    }
-  }
 
   public static Mono<Void> email(String email) {
     return isValidEmail(email)

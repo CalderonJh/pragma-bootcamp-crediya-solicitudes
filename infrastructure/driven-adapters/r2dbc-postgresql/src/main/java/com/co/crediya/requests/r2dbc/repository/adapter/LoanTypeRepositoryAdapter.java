@@ -1,7 +1,7 @@
 package com.co.crediya.requests.r2dbc.repository.adapter;
 
 import com.co.crediya.requests.model.loanapplication.LoanType;
-import com.co.crediya.requests.r2dbc.entity.LoanTypeEntity;
+import com.co.crediya.requests.r2dbc.entity.loan.LoanTypeEntity;
 import com.co.crediya.requests.r2dbc.helper.ReactiveAdapterOperations;
 import com.co.crediya.requests.r2dbc.repository.LoanTypeRepository;
 import java.util.UUID;

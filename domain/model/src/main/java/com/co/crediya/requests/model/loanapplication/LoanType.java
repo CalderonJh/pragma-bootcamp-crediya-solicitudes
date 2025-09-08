@@ -4,8 +4,7 @@ import java.math.BigDecimal;
 import java.util.UUID;
 import lombok.*;
 
-@Getter
-@Setter
+@Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor

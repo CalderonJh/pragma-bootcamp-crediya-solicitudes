@@ -1,6 +1,6 @@
 package com.co.crediya.requests.usecase.loan;
 
-import static com.co.crediya.requests.util.Constant.DEFAULT_LOAN_STATUS;
+import static com.co.crediya.requests.constant.Constant.DEFAULT_LOAN_STATUS;
 import static com.co.crediya.requests.util.validation.ReactiveValidators.*;
 
 import com.co.crediya.requests.constant.RoleType;

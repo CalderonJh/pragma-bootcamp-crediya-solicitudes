@@ -1,7 +1,6 @@
 package com.co.crediya.requests.api;
 
-import static org.springframework.web.reactive.function.server.RequestPredicates.GET;
-import static org.springframework.web.reactive.function.server.RequestPredicates.POST;
+import static org.springframework.web.reactive.function.server.RequestPredicates.*;
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
 
 import lombok.RequiredArgsConstructor;
@@ -21,18 +20,24 @@ public class RouterRest {
     @RouterOperation(
         path = "/api/v1/solicitud",
         method = RequestMethod.POST,
-        beanClass = Handler.class,
-        beanMethod = "listenPOSTApplyForLoan"),
+        beanClass = LoanApplicationsHandler.class,
+        beanMethod = "applyForLoan"),
     @RouterOperation(
         path = "/api/v1/solicitudes",
         method = RequestMethod.GET,
-        beanClass = Handler.class,
-        beanMethod = "listenGETLoanApplicationsPage")
+        beanClass = LoanApplicationsHandler.class,
+        beanMethod = "getLoanApplicationsPage"),
+    @RouterOperation(
+        path = "/api/v1/solicitudes",
+        method = RequestMethod.PATCH,
+        beanClass = LoanApplicationsHandler.class,
+        beanMethod = "updateLoanAplStatus")
   })
   @Bean
-  public RouterFunction<ServerResponse> routerFunction(Handler handler) {
-    return route(POST("/api/v1/solicitud"), handler::listenPOSTApplyForLoan)
-        .and(route(GET("/api/v1/solicitudes"), handler::listenGETLoanApplicationsPage));
+  public RouterFunction<ServerResponse> routerFunction(LoanApplicationsHandler handler) {
+    return route(POST("/api/v1/solicitudes"), handler::applyForLoan)
+        .andRoute(PATCH("/api/v1/solicitudes/estado"), handler::updateLoanAplStatus)
+        .and(route(GET("/api/v1/solicitudes"), handler::getLoanApplicationsPage));
   }
 
   @Bean

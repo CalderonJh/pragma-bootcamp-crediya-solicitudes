@@ -5,7 +5,7 @@ import com.co.crediya.requests.model.loanapplication.LoanApplicationFilter;
 import com.co.crediya.requests.model.util.pagination.Page;
 import com.co.crediya.requests.model.util.pagination.Pageable;
 import com.co.crediya.requests.model.util.pagination.Sort;
-import com.co.crediya.requests.r2dbc.entity.LoanApplicationEntity;
+import com.co.crediya.requests.r2dbc.entity.loan.LoanApplicationEntity;
 import com.co.crediya.requests.r2dbc.helper.ReactiveAdapterOperations;
 import com.co.crediya.requests.r2dbc.mapper.LoanApplicationMapper;
 import com.co.crediya.requests.r2dbc.projection.LoanApplicationView;
@@ -17,7 +17,6 @@ import java.util.UUID;
 import org.reactivecommons.utils.ObjectMapper;
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
 import org.springframework.stereotype.Repository;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Repository
@@ -36,7 +35,7 @@ public class LoanApplicationRepositoryAdapter
   @Override
   public Mono<LoanApplication> saveLoanApplication(LoanApplication loanApplication) {
     LoanApplicationEntity entity = LoanApplicationMapper.toEntity(loanApplication);
-    return repository.save(entity).map(LoanApplicationMapper::toModel);
+    return repository.save(entity).flatMap(saved -> getById(saved.getId()));
   }
 
   @Override
@@ -135,7 +134,7 @@ public class LoanApplicationRepositoryAdapter
   }
 
   @Override
-  public Flux<LoanApplication> getLoanApplications() {
-    return repository.findAllView().map(LoanApplicationMapper::toModel);
+  public Mono<LoanApplication> getById(UUID applicationId) {
+    return repository.findViewById(applicationId).map(LoanApplicationMapper::toModel);
   }
 }

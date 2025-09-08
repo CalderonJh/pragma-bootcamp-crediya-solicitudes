@@ -1,5 +1,6 @@
 package com.co.crediya.requests.api;
 
+import static com.co.crediya.requests.api.util.Constant.LOAN_APL_ID_PARAM;
 import static com.co.crediya.requests.api.util.Constant.LOAN_STATUS_ID_PARAM;
 import static com.co.crediya.requests.api.util.WebTools.extractPageable;
 
@@ -18,6 +19,7 @@ import com.co.crediya.requests.model.loanapplication.LoanApplicationFilter;
 import com.co.crediya.requests.model.util.pagination.Page;
 import com.co.crediya.requests.usecase.loan.ApplyForLoanUseCase;
 import com.co.crediya.requests.usecase.loan.FindLoanApplicationsUseCase;
+import com.co.crediya.requests.usecase.loan.UpdateLoanApplicationUseCase;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -26,6 +28,7 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Logger;
@@ -43,11 +46,13 @@ import reactor.core.publisher.Mono;
 @Component
 @RequiredArgsConstructor
 @Tag(name = "Solicitudes de crédito")
-public class Handler {
+public class LoanApplicationsHandler {
   private final ApplyForLoanUseCase applyForLoanUseCase;
   private final FindLoanApplicationsUseCase findLoanApplicationsUseCase;
+  private final UpdateLoanApplicationUseCase updateLoanApplicationUseCase;
   private final AuthServiceClient authServiceClient;
-  private static final Logger logger = Logger.getLogger(Handler.class.getName());
+
+  private static final Logger logger = Logger.getLogger(LoanApplicationsHandler.class.getName());
 
   @Operation(
       operationId = "applyForLoan",
@@ -57,7 +62,7 @@ public class Handler {
               content =
                   @Content(schema = @Schema(implementation = CreateLoanApplicationDTO.class))),
       responses = {@ApiResponse(responseCode = "201", content = @Content())})
-  public Mono<ServerResponse> listenPOSTApplyForLoan(ServerRequest serverRequest) {
+  public Mono<ServerResponse> applyForLoan(ServerRequest serverRequest) {
     Mono<CreateLoanApplicationDTO> loanApplicationBody =
         serverRequest.bodyToMono(CreateLoanApplicationDTO.class);
     return serverRequest
@@ -70,7 +75,7 @@ public class Handler {
               // call auth ms to get user details
               Mono<UserDTO> user =
                   authServiceClient
-                      .getUser(actorId, jwt.getTokenValue())
+                      .getUser(actorId)
                       .switchIfEmpty(Mono.error(new DataNotFoundException("User not found")))
                       .doOnNext(
                           u -> logger.info("Fetched user details: %s".formatted(u.toString())));
@@ -88,7 +93,7 @@ public class Handler {
   }
 
   @Operation(
-      operationId = "listenGETLoanApplicationsPage",
+      operationId = "getLoanApplicationsPage",
       summary = "Consulta solicitudes de préstamo",
       responses = {
         @ApiResponse(
@@ -99,7 +104,7 @@ public class Handler {
   @Parameter(name = "size", description = "Tamaño de página", example = "20")
   @Parameter(name = "sort", description = "Criterios de ordenamiento", example = "amount,asc")
   @Parameter(name = "statusId", description = "Filtra por id de estado de la solicitud")
-  public Mono<ServerResponse> listenGETLoanApplicationsPage(ServerRequest serverRequest) {
+  public Mono<ServerResponse> getLoanApplicationsPage(ServerRequest serverRequest) {
     return WebTools.extractApiClient(serverRequest)
         .flatMap(
             apiClient -> {
@@ -144,6 +149,21 @@ public class Handler {
                   pageContent,
                   loanApplicationPage.getPageable(),
                   loanApplicationPage.getTotalElements());
+            });
+  }
+
+  public Mono<ServerResponse> updateLoanAplStatus(ServerRequest serverRequest) {
+    return WebTools.extractActor(serverRequest)
+        .flatMap(
+            actor -> {
+              Optional<String> applicationId = serverRequest.queryParam(LOAN_APL_ID_PARAM);
+              Optional<String> statusId = serverRequest.queryParam(LOAN_STATUS_ID_PARAM);
+              return updateLoanApplicationUseCase
+                  .updateStatus(
+                      applicationId.map(UUID::fromString).orElse(null),
+                      statusId.map(UUID::fromString).orElse(null),
+                      actor)
+                  .flatMap(res -> ServerResponse.status(HttpStatus.OK).bodyValue(res));
             });
   }
 }

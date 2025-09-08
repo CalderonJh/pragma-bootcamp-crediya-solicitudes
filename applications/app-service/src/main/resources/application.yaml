@@ -1,24 +1,32 @@
 logging:
   level:
-    org.springframework.r2dbc.core: DEBUG
-    io.r2dbc.postgresql.QUERY: DEBUG
+    org.springframework.r2dbc.core: INFO
+    io.r2dbc.postgresql.QUERY: INFO
 server:
   port: 8082
+
 spring:
+  config:
+    import: optional:classpath:infrastructure:driven-adapters:notifications:application.yaml
   r2dbc:
     properties:
       logger:
         level: DEBUG
+
   application:
     name: "Requests"
+
   devtools:
     add-properties: false
+
   h2:
     console:
       enabled: true
       path: "/h2"
+
   profiles:
     include: null
+
 management:
   endpoints:
     web:
@@ -28,6 +36,7 @@ management:
     health:
       probes:
         enabled: true
+
 cors:
   allowed-origins: "http://localhost:4200,http://localhost:8080"
 
@@ -39,3 +48,17 @@ adapters:
     schema: ${DB_SCHEMA:public}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
+
+security:
+  jwt:
+    public-key-path: ${JWT_PUBLIC_KEY_PATH}
+
+services:
+  auth:
+    url: ${MS_AUTH_URL}
+    api-key: ${API_KEY}
+
+aws:
+  region: ${AWS_REGION}
+  sqs:
+    queue-url: ${AWS_SQS_QUEUE_URL}

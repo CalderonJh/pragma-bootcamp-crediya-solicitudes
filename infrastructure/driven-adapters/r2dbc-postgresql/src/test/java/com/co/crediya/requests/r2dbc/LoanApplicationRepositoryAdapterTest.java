@@ -7,7 +7,7 @@ import static org.mockito.Mockito.when;
 import com.co.crediya.requests.model.loanapplication.LoanApplication;
 import com.co.crediya.requests.model.loanapplication.LoanStatus;
 import com.co.crediya.requests.model.loanapplication.LoanType;
-import com.co.crediya.requests.r2dbc.entity.LoanApplicationEntity;
+import com.co.crediya.requests.r2dbc.entity.loan.LoanApplicationEntity;
 import com.co.crediya.requests.r2dbc.mapper.LoanApplicationMapper;
 import com.co.crediya.requests.r2dbc.repository.LoanApplicationRepository;
 import com.co.crediya.requests.r2dbc.repository.adapter.LoanApplicationRepositoryAdapter;

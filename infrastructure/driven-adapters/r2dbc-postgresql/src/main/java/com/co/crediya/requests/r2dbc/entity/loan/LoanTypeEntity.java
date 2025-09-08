@@ -1,4 +1,4 @@
-package com.co.crediya.requests.r2dbc.entity;
+package com.co.crediya.requests.r2dbc.entity.loan;
 
 import java.math.BigDecimal;
 import java.util.UUID;

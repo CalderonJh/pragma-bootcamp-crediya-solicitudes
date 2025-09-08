@@ -13,7 +13,6 @@ public class RoleValidator {
 
   private static final Logger logger = Logger.getLogger(RoleValidator.class.getName());
 
-  public static final String PERMISSION_DENIED_MESSAGE = "No permission to perform this action";
 
   public static Mono<Void> hasRole(Actor actor, RoleType... options) {
     for (RoleType type : options)
@@ -24,6 +23,6 @@ public class RoleValidator {
         () ->
             "Permission denied for actor %s, required role: %s "
                 .formatted(actor, Stream.of(options).map(RoleType::getValue).toList()));
-    return Mono.error(new PermissionException(PERMISSION_DENIED_MESSAGE));
+    return Mono.error(new PermissionException(MessageTemplate.NOT_AUTHORIZED.render()));
   }
 }
