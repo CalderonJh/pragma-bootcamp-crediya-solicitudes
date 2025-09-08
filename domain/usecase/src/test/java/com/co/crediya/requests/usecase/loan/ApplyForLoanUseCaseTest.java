@@ -1,7 +1,5 @@
 package com.co.crediya.requests.usecase.loan;
 
-import static com.co.crediya.requests.util.validation.ReactiveValidators.MessageTemplate;
-import static com.co.crediya.requests.util.validation.RoleValidator.PERMISSION_DENIED_MESSAGE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
@@ -16,9 +14,11 @@ import com.co.crediya.requests.model.loanapplication.LoanType;
 import com.co.crediya.requests.model.loanapplication.gateways.LoanApplicationRepository;
 import com.co.crediya.requests.model.loanapplication.gateways.LoanStatusRepository;
 import com.co.crediya.requests.model.loanapplication.gateways.LoanTypeRepository;
-import com.co.crediya.requests.util.Constant;
+import com.co.crediya.requests.constant.Constant;
 import java.math.BigDecimal;
 import java.util.UUID;
+
+import com.co.crediya.requests.util.validation.MessageTemplate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -63,7 +63,7 @@ class ApplyForLoanUseCaseTest {
             error ->
                 assertThat(error)
                     .isInstanceOf(PermissionException.class)
-                    .hasMessage(PERMISSION_DENIED_MESSAGE))
+                    .hasMessage(MessageTemplate.NOT_AUTHORIZED.render()))
         .verify();
   }
 

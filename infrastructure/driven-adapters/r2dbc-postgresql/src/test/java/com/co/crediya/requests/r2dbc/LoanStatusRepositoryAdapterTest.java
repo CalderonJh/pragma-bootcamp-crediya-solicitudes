@@ -4,7 +4,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 import com.co.crediya.requests.model.loanapplication.LoanStatus;
-import com.co.crediya.requests.r2dbc.entity.LoanStatusEntity;
+import com.co.crediya.requests.r2dbc.entity.loan.LoanStatusEntity;
 import com.co.crediya.requests.r2dbc.repository.LoanStatusRepository;
 import com.co.crediya.requests.r2dbc.repository.adapter.LoanStatusRepositoryAdapter;
 import java.util.UUID;

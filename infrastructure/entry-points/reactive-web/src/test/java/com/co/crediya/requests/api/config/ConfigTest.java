@@ -1,10 +1,11 @@
 package com.co.crediya.requests.api.config;
 
-import com.co.crediya.requests.api.Handler;
+import com.co.crediya.requests.api.LoanApplicationsHandler;
 import com.co.crediya.requests.api.RouterRest;
 import com.co.crediya.requests.api.client.AuthServiceClient;
 import com.co.crediya.requests.usecase.loan.ApplyForLoanUseCase;
 import com.co.crediya.requests.usecase.loan.FindLoanApplicationsUseCase;
+import com.co.crediya.requests.usecase.loan.UpdateLoanApplicationUseCase;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
@@ -14,7 +15,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
 @WebFluxTest
-@ContextConfiguration(classes = {RouterRest.class, Handler.class, TestSecurityConfig.class})
+@ContextConfiguration(classes = {RouterRest.class, LoanApplicationsHandler.class, TestSecurityConfig.class})
 @Import({CorsConfig.class, SecurityHeadersConfig.class})
 class ConfigTest {
 
@@ -22,6 +23,7 @@ class ConfigTest {
   @MockitoBean private ApplyForLoanUseCase applyForLoanUseCase;
   @MockitoBean private AuthServiceClient authServiceClient;
 	@MockitoBean private FindLoanApplicationsUseCase findLoanApplicationsUseCase;
+  @MockitoBean private UpdateLoanApplicationUseCase updateLoanApplicationUseCase;
 
   @Test
   void corsConfigurationShouldAllowOrigins() {

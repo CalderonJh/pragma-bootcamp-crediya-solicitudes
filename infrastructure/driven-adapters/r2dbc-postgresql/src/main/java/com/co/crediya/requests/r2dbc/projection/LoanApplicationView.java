@@ -2,12 +2,16 @@ package com.co.crediya.requests.r2dbc.projection;
 
 import java.math.BigDecimal;
 import java.util.UUID;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.data.relational.core.mapping.Column;
 
 @Getter
 @Setter
+@AllArgsConstructor
+@NoArgsConstructor
 public class LoanApplicationView {
   @Column("id")
   private UUID id;

@@ -3,7 +3,7 @@ package com.co.crediya.requests.r2dbc;
 import static org.mockito.Mockito.*;
 
 import com.co.crediya.requests.model.loanapplication.LoanType;
-import com.co.crediya.requests.r2dbc.entity.LoanTypeEntity;
+import com.co.crediya.requests.r2dbc.entity.loan.LoanTypeEntity;
 import com.co.crediya.requests.r2dbc.repository.LoanTypeRepository;
 import com.co.crediya.requests.r2dbc.repository.adapter.LoanTypeRepositoryAdapter;
 import java.util.UUID;

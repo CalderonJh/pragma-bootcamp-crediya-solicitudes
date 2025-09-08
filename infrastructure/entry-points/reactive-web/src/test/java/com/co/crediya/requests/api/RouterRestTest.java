@@ -12,6 +12,8 @@ import com.co.crediya.requests.usecase.loan.ApplyForLoanUseCase;
 import com.co.crediya.requests.usecase.loan.FindLoanApplicationsUseCase;
 import java.math.BigDecimal;
 import java.util.UUID;
+
+import com.co.crediya.requests.usecase.loan.UpdateLoanApplicationUseCase;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,27 +25,28 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
 
 @WebFluxTest
-@ContextConfiguration(classes = {RouterRest.class, Handler.class, TestSecurityConfig.class})
+@ContextConfiguration(classes = {RouterRest.class, LoanApplicationsHandler.class, TestSecurityConfig.class})
 class RouterRestTest {
 
   @Autowired private WebTestClient webTestClient;
   @MockitoBean private ApplyForLoanUseCase applyForLoanUseCase;
   @MockitoBean private FindLoanApplicationsUseCase findLoanApplicationsUseCase;
   @MockitoBean private AuthServiceClient authServiceClient;
-	
+  @MockitoBean private UpdateLoanApplicationUseCase updateLoanApplicationUseCase;
+
   @Test
   @DisplayName("POST - Apply for Loan")
   void testListenPOSTApplyForLoan() {
     CreateLoanApplicationDTO dto =
         new CreateLoanApplicationDTO(BigDecimal.valueOf(100), 1, UUID.randomUUID());
-    when(authServiceClient.getUser(any(), any()))
+    when(authServiceClient.getUser(any()))
         .thenReturn(Mono.just(new UserDTO(UUID.randomUUID(), "email@email.com", "USER")));
     when(applyForLoanUseCase.execute(any(), any())).thenReturn(Mono.empty());
     webTestClient
         .mutateWith(
             mockJwt().jwt(jwt -> jwt.subject(UUID.randomUUID().toString()).claim("role", "USER")))
         .post()
-        .uri("/api/v1/solicitud")
+        .uri("/api/v1/solicitudes")
         .contentType(MediaType.APPLICATION_JSON)
         .bodyValue(dto)
         .exchange()

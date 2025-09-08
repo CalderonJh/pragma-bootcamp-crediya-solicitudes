@@ -47,7 +47,7 @@ public class UpdateLoanApplicationUseCase {
         .switchIfEmpty(
             Mono.error(
                 new DataNotFoundException(
-                    MessageTemplate.NOT_FOUND.render("Email message template" + loanStatusName))))
+                    MessageTemplate.NOT_FOUND.render("Email message template"))))
         .flatMap(
             emailMessage ->
                 userNotificationService.sendNotificationByEmail(applicantId, emailMessage))

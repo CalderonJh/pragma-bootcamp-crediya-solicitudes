@@ -9,6 +9,7 @@ import com.co.crediya.requests.model.loanapplication.LoanStatus;
 import com.co.crediya.requests.model.loanapplication.LoanType;
 import com.co.crediya.requests.r2dbc.entity.loan.LoanApplicationEntity;
 import com.co.crediya.requests.r2dbc.mapper.LoanApplicationMapper;
+import com.co.crediya.requests.r2dbc.projection.LoanApplicationView;
 import com.co.crediya.requests.r2dbc.repository.LoanApplicationRepository;
 import com.co.crediya.requests.r2dbc.repository.adapter.LoanApplicationRepositoryAdapter;
 import java.util.UUID;
@@ -38,7 +39,13 @@ class LoanApplicationRepositoryAdapterTest {
             .build();
     LoanApplicationEntity entity = LoanApplicationMapper.toEntity(loan);
 
+    LoanApplicationView view = new LoanApplicationView();
+    view.setApplicantId(entity.getApplicantId());
+    view.setLoanTypeId(entity.getLoanTypeId());
+    view.setLoanStatusId(entity.getLoanStatusId());
+		
     when(repository.save(any(LoanApplicationEntity.class))).thenReturn(Mono.just(entity));
+    when(repository.findViewById(any())).thenReturn(Mono.just(view));
 
     Mono<LoanApplication> result = repositoryAdapter.saveLoanApplication(loan);
 
