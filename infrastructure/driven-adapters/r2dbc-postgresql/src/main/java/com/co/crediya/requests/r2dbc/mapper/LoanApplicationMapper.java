@@ -11,6 +11,7 @@ public class LoanApplicationMapper {
 
   public static LoanApplicationEntity toEntity(LoanApplication loanApplication) {
     return LoanApplicationEntity.builder()
+        .id(loanApplication.getId())
         .applicantId(loanApplication.getApplicantId())
         .amount(loanApplication.getAmount())
         .termInMonths(loanApplication.getTermInMonths())
