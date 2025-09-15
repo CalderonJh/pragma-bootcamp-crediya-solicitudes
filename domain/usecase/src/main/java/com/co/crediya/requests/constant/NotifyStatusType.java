@@ -6,8 +6,11 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public enum NotifyStatusType {
-  APPROVED("APROBADA", "LOAN_APPROVED"),
-  REJECTED("RECHAZADA", "LOAN_REJECTED");
+  APPROVED(LoanStatusType.APPROVED.getDbValue(), "LOAN_APPROVED"),
+	MANUAL_REVIEW(LoanStatusType.MANUAL_REVIEW.getDbValue(), "LOAN_MANUAL_REVIEW"),
+  REJECTED(LoanStatusType.REJECTED.getDbValue(), "LOAN_REJECTED");
+
+
 
   private final String dbValue;
   private final String msgKey;

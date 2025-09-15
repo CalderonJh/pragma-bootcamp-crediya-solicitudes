@@ -3,15 +3,16 @@ package com.co.crediya.requests.usecase.loan;
 import static com.co.crediya.requests.constant.Constant.DEFAULT_LOAN_STATUS;
 import static com.co.crediya.requests.util.validation.ReactiveValidators.*;
 
+import com.co.crediya.requests.constant.NotifyStatusType;
 import com.co.crediya.requests.constant.RoleType;
 import com.co.crediya.requests.exception.DataNotFoundException;
 import com.co.crediya.requests.exception.InternalException;
 import com.co.crediya.requests.model.loanapplication.Actor;
 import com.co.crediya.requests.model.loanapplication.LoanApplication;
-import com.co.crediya.requests.model.loanapplication.gateways.LoanApplicationRepository;
-import com.co.crediya.requests.model.loanapplication.gateways.LoanStatusRepository;
-import com.co.crediya.requests.model.loanapplication.gateways.LoanTypeRepository;
+import com.co.crediya.requests.model.loanapplication.gateways.*;
+import com.co.crediya.requests.util.validation.MessageTemplate;
 import com.co.crediya.requests.util.validation.RoleValidator;
+import java.util.List;
 import java.util.UUID;
 import java.util.logging.Logger;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,8 @@ public class ApplyForLoanUseCase {
   private final LoanApplicationRepository loanApplicationRepository;
   private final LoanStatusRepository loanStatusRepository;
   private final LoanTypeRepository loanTypeRepository;
+  private final DebtCapacityService debtCapacityService;
+  private final ApplicantService applicantService;
   private static final Logger logger = Logger.getLogger(ApplyForLoanUseCase.class.getName());
 
   public Mono<Void> execute(LoanApplication loanApplication, Actor actor) {
@@ -31,8 +34,30 @@ public class ApplyForLoanUseCase {
         .flatMap(this::validateReferences)
         .flatMap(this::setDefaultLoanStatus)
         .flatMap(loanApplicationRepository::saveLoanApplication)
+        .flatMap(this::assessDebtCapacity)
         .doOnNext(la -> logger.info("Saved loan application: %s".formatted(la.toString())))
         .then();
+  }
+
+  private Mono<LoanApplication> assessDebtCapacity(LoanApplication loanApplication) {
+    boolean automaticApproval = loanApplication.getLoanType().getAutoValidate();
+    if (!automaticApproval) return Mono.just(loanApplication);
+    return applicantService
+        .getApplicantById(loanApplication.getApplicantId())
+        .switchIfEmpty(
+            Mono.error(
+                new DataNotFoundException(MessageTemplate.NOT_FOUND.render("Loan applicant"))))
+        .zipWith(getUserApprovedLoans(loanApplication))
+        .flatMap(
+            tuple ->
+                debtCapacityService
+                    .validateDebtCapacity(tuple.getT1(), tuple.getT2(), loanApplication)
+                    .flatMap(res -> Mono.just(loanApplication)));
+  }
+
+  private Mono<List<LoanApplication>> getUserApprovedLoans(LoanApplication loanApplication) {
+    return loanApplicationRepository.getByUserIdAndStatus(
+        loanApplication.getApplicantId(), NotifyStatusType.APPROVED.getDbValue());
   }
 
   private Mono<LoanApplication> validateActorRole(LoanApplication loanApplication, Actor actor) {

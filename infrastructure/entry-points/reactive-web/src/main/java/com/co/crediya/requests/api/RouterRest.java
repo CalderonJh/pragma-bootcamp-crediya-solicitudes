@@ -37,6 +37,7 @@ public class RouterRest {
   public RouterFunction<ServerResponse> routerFunction(LoanApplicationsHandler handler) {
     return route(POST("/api/v1/solicitudes"), handler::applyForLoan)
         .andRoute(PATCH("/api/v1/solicitudes/estado"), handler::updateLoanAplStatus)
+        .andRoute(PATCH("/api/v1/solicitudes/auto-aprov/estado"), handler::updateAutoApprovedApl)
         .and(route(GET("/api/v1/solicitudes"), handler::getLoanApplicationsPage));
   }
 

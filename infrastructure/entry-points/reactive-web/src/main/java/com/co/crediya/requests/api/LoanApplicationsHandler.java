@@ -19,6 +19,7 @@ import com.co.crediya.requests.model.loanapplication.LoanApplicationFilter;
 import com.co.crediya.requests.model.util.pagination.Page;
 import com.co.crediya.requests.usecase.loan.ApplyForLoanUseCase;
 import com.co.crediya.requests.usecase.loan.FindLoanApplicationsUseCase;
+import com.co.crediya.requests.usecase.loan.UpdateAutoApprovedLoanUseCase;
 import com.co.crediya.requests.usecase.loan.UpdateLoanApplicationUseCase;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -50,6 +51,7 @@ public class LoanApplicationsHandler {
   private final ApplyForLoanUseCase applyForLoanUseCase;
   private final FindLoanApplicationsUseCase findLoanApplicationsUseCase;
   private final UpdateLoanApplicationUseCase updateLoanApplicationUseCase;
+  private final UpdateAutoApprovedLoanUseCase updateAutoApprovedLoanUseCase;
   private final AuthServiceClient authServiceClient;
 
   private static final Logger logger = Logger.getLogger(LoanApplicationsHandler.class.getName());
@@ -173,6 +175,18 @@ public class LoanApplicationsHandler {
                       applicationId.map(UUID::fromString).orElse(null),
                       statusId.map(UUID::fromString).orElse(null),
                       actor)
+                  .flatMap(res -> ServerResponse.status(HttpStatus.OK).bodyValue(res));
+            });
+  }
+
+  public Mono<ServerResponse> updateAutoApprovedApl(ServerRequest serverRequest) {
+    return WebTools.extractActor(serverRequest)
+        .flatMap(
+            actor -> {
+              Optional<String> applicationId = serverRequest.queryParam(LOAN_APL_ID_PARAM);
+              Optional<String> result = serverRequest.queryParam("result");
+              return updateAutoApprovedLoanUseCase
+                  .execute(applicationId.map(UUID::fromString).orElse(null), result.orElse(null))
                   .flatMap(res -> ServerResponse.status(HttpStatus.OK).bodyValue(res));
             });
   }

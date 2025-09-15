@@ -20,8 +20,8 @@ public class EmailMessageEntity {
   @Column("asunto")
   private String subject;
 
-  @Column("texto")
-  private String body;
+  @Column("template")
+  private String template;
 
   @Column("clave")
   private String key;

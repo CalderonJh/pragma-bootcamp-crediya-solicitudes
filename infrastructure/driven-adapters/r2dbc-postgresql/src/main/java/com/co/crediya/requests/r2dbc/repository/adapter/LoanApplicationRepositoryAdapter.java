@@ -137,4 +137,12 @@ public class LoanApplicationRepositoryAdapter
   public Mono<LoanApplication> getById(UUID applicationId) {
     return repository.findViewById(applicationId).map(LoanApplicationMapper::toModel);
   }
+
+  @Override
+  public Mono<List<LoanApplication>> getByUserIdAndStatus(UUID userId, String statusName) {
+    return repository
+        .findByApplicantIdAndStatus(userId, statusName)
+        .map(LoanApplicationMapper::toModel)
+        .collectList();
+  }
 }
