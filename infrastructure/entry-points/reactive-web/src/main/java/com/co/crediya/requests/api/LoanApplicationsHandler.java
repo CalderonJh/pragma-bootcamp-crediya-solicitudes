@@ -13,7 +13,7 @@ import com.co.crediya.requests.api.mapper.LoanApplicationMapper;
 import com.co.crediya.requests.api.util.ApiClient;
 import com.co.crediya.requests.api.util.WebTools;
 import com.co.crediya.requests.exception.DataNotFoundException;
-import com.co.crediya.requests.model.loanapplication.Actor;
+import com.co.crediya.requests.model.util.Actor;
 import com.co.crediya.requests.model.loanapplication.LoanApplication;
 import com.co.crediya.requests.model.loanapplication.LoanApplicationFilter;
 import com.co.crediya.requests.model.util.pagination.Page;

@@ -4,7 +4,7 @@ import static org.mockito.Mockito.*;
 
 import com.co.crediya.requests.constant.RoleType;
 import com.co.crediya.requests.exception.PermissionException;
-import com.co.crediya.requests.model.loanapplication.Actor;
+import com.co.crediya.requests.model.util.Actor;
 import com.co.crediya.requests.model.loanapplication.LoanApplicationFilter;
 import com.co.crediya.requests.model.loanapplication.gateways.LoanApplicationRepository;
 import com.co.crediya.requests.model.util.pagination.Pageable;

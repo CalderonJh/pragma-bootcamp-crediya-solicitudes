@@ -51,6 +51,7 @@ aws:
   sqs:
     notifications-queue-url: "${AWS_NOTIFICATIONS_SQS_QUEUE_URL}"
     debt-capacity-queue-url: "${AWS_DEBT_CAPACITY_SQS_QUEUE_URL}"
+    loan-report-queue-url: "${AWS_LOAN_REPORT_SQS_QUEUE_URL}"
 adapter:
   restconsumer:
     timeout: 5000

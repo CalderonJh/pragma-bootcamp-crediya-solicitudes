@@ -2,15 +2,17 @@ package com.co.crediya.requests.usecase.loan;
 
 import static com.co.crediya.requests.util.validation.ReactiveValidators.notNull;
 
+import com.co.crediya.requests.constant.LoanStatusType;
 import com.co.crediya.requests.constant.NotifyStatusType;
 import com.co.crediya.requests.constant.RoleType;
 import com.co.crediya.requests.exception.DataNotFoundException;
-import com.co.crediya.requests.model.loanapplication.Actor;
 import com.co.crediya.requests.model.loanapplication.LoanApplication;
 import com.co.crediya.requests.model.loanapplication.gateways.LoanApplicationRepository;
 import com.co.crediya.requests.model.loanapplication.gateways.LoanStatusRepository;
+import com.co.crediya.requests.model.loanapplication.gateways.UpdateReportService;
 import com.co.crediya.requests.model.loanapplication.gateways.UserNotificationService;
 import com.co.crediya.requests.model.notifications.gateways.EmailMessageRepository;
+import com.co.crediya.requests.model.util.Actor;
 import com.co.crediya.requests.util.validation.MessageTemplate;
 import com.co.crediya.requests.util.validation.RoleValidator;
 import java.util.UUID;
@@ -25,13 +27,15 @@ public class UpdateLoanApplicationUseCase {
   private final LoanStatusRepository loanStatusRepository;
   private final UserNotificationService userNotificationService;
   private final EmailMessageRepository emailMessageRepository;
+  private final UpdateReportService updateReportService;
 
   public Mono<LoanApplication> execute(UUID applicationId, UUID statusId, Actor actor) {
     return validateRole(actor)
         .then(validateInputs(applicationId, statusId))
         .then(Mono.defer(() -> findLoanApplication(applicationId)))
         .flatMap(apl -> updateLoanStatus(apl, statusId))
-        .flatMap(this::notifyUserIfNeeded);
+        .flatMap(this::notifyUserIfNeeded)
+        .flatMap(this::updateActiveLoansReport);
   }
 
   private Mono<Actor> validateRole(Actor actor) {
@@ -69,7 +73,7 @@ public class UpdateLoanApplicationUseCase {
     }
     return Mono.just(apl);
   }
-
+	
   private Mono<String> notifyUser(UUID applicantId, String loanStatusName) {
     return emailMessageRepository
         .getByKey(NotifyStatusType.fromDBValue(loanStatusName).getMsgKey())
@@ -86,5 +90,13 @@ public class UpdateLoanApplicationUseCase {
                     () ->
                         "Notify to user %s about application status change to '%s'. Notification sent with message id %s"
                             .formatted(applicantId, loanStatusName, msgId)));
+  }
+
+  private Mono<LoanApplication> updateActiveLoansReport(LoanApplication loanApplication) {
+    if (LoanStatusType.APPROVED.getDbValue().equals(loanApplication.getLoanStatus().getName()))
+      return updateReportService
+          .update(1L, loanApplication.getAmount())
+          .flatMap(msgId -> Mono.just(loanApplication));
+    else return Mono.just(loanApplication);
   }
 }

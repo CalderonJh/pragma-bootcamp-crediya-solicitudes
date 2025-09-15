@@ -1,7 +1,7 @@
 package com.co.crediya.requests.usecase.loan;
 
 import com.co.crediya.requests.constant.RoleType;
-import com.co.crediya.requests.model.loanapplication.Actor;
+import com.co.crediya.requests.model.util.Actor;
 import com.co.crediya.requests.model.loanapplication.LoanApplication;
 import com.co.crediya.requests.model.loanapplication.LoanApplicationFilter;
 import com.co.crediya.requests.model.loanapplication.gateways.LoanApplicationRepository;

@@ -2,7 +2,7 @@ package com.co.crediya.requests.util.validation;
 
 import com.co.crediya.requests.constant.RoleType;
 import com.co.crediya.requests.exception.PermissionException;
-import com.co.crediya.requests.model.loanapplication.Actor;
+import com.co.crediya.requests.model.util.Actor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;

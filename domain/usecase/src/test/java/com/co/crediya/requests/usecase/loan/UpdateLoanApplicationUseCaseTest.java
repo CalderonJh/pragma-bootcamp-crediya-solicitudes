@@ -8,14 +8,15 @@ import com.co.crediya.requests.constant.NotifyStatusType;
 import com.co.crediya.requests.constant.RoleType;
 import com.co.crediya.requests.exception.DataNotFoundException;
 import com.co.crediya.requests.exception.PermissionException;
-import com.co.crediya.requests.model.loanapplication.Actor;
 import com.co.crediya.requests.model.loanapplication.LoanApplication;
 import com.co.crediya.requests.model.loanapplication.LoanStatus;
 import com.co.crediya.requests.model.loanapplication.gateways.LoanApplicationRepository;
 import com.co.crediya.requests.model.loanapplication.gateways.LoanStatusRepository;
+import com.co.crediya.requests.model.loanapplication.gateways.UpdateReportService;
 import com.co.crediya.requests.model.loanapplication.gateways.UserNotificationService;
 import com.co.crediya.requests.model.notifications.EmailMessage;
 import com.co.crediya.requests.model.notifications.gateways.EmailMessageRepository;
+import com.co.crediya.requests.model.util.Actor;
 import com.co.crediya.requests.util.validation.MessageTemplate;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,8 +29,8 @@ class UpdateLoanApplicationUseCaseTest {
   private LoanStatusRepository loanStatusRepository;
   private UserNotificationService userNotificationService;
   private EmailMessageRepository emailMessageRepository;
-
   private UpdateLoanApplicationUseCase useCase;
+  private UpdateReportService updateReportService;
 
   @BeforeEach
   void setUp() {
@@ -37,12 +38,14 @@ class UpdateLoanApplicationUseCaseTest {
     loanStatusRepository = mock(LoanStatusRepository.class);
     userNotificationService = mock(UserNotificationService.class);
     emailMessageRepository = mock(EmailMessageRepository.class);
+    updateReportService = mock(UpdateReportService.class);
     useCase =
         new UpdateLoanApplicationUseCase(
             loanApplicationRepository,
             loanStatusRepository,
             userNotificationService,
-            emailMessageRepository);
+            emailMessageRepository,
+            updateReportService);
   }
 
   @Test

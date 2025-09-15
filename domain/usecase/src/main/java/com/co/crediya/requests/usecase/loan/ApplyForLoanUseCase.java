@@ -8,7 +8,7 @@ import com.co.crediya.requests.constant.NotifyStatusType;
 import com.co.crediya.requests.constant.RoleType;
 import com.co.crediya.requests.exception.DataNotFoundException;
 import com.co.crediya.requests.exception.InternalException;
-import com.co.crediya.requests.model.loanapplication.Actor;
+import com.co.crediya.requests.model.util.Actor;
 import com.co.crediya.requests.model.loanapplication.LoanApplication;
 import com.co.crediya.requests.model.loanapplication.gateways.*;
 import com.co.crediya.requests.util.validation.MessageTemplate;
@@ -35,12 +35,12 @@ public class ApplyForLoanUseCase {
         .flatMap(this::validateReferences)
         .flatMap(this::setDefaultLoanStatus)
         .flatMap(loanApplicationRepository::saveLoanApplication)
-        .flatMap(this::assessDebtCapacity)
+        .flatMap(this::sendAssessDebtCapacityRequest)
         .doOnNext(la -> logger.info("Saved loan application: %s".formatted(la.toString())))
         .then();
   }
 
-  private Mono<LoanApplication> assessDebtCapacity(LoanApplication loanApplication) {
+  private Mono<LoanApplication> sendAssessDebtCapacityRequest(LoanApplication loanApplication) {
     boolean automaticApproval = loanApplication.getLoanType().getAutoValidate();
     if (!automaticApproval) return Mono.just(loanApplication);
 

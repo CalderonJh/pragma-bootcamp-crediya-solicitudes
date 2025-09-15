@@ -12,6 +12,7 @@ import com.co.crediya.requests.exception.InternalException;
 import com.co.crediya.requests.exception.PermissionException;
 import com.co.crediya.requests.model.loanapplication.*;
 import com.co.crediya.requests.model.loanapplication.gateways.*;
+import com.co.crediya.requests.model.util.Actor;
 import com.co.crediya.requests.util.validation.MessageTemplate;
 import java.math.BigDecimal;
 import java.util.Collections;

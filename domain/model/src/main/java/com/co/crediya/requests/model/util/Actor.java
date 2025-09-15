@@ -1,4 +1,4 @@
-package com.co.crediya.requests.model.loanapplication;
+package com.co.crediya.requests.model.util;
 
 import lombok.*;
 

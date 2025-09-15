@@ -3,7 +3,7 @@ package com.co.crediya.requests.api.util;
 import static com.co.crediya.requests.api.util.Constant.ROLE_CLAIM_KEY;
 
 import com.co.crediya.requests.exception.PermissionException;
-import com.co.crediya.requests.model.loanapplication.Actor;
+import com.co.crediya.requests.model.util.Actor;
 import com.co.crediya.requests.model.util.pagination.Pageable;
 import com.co.crediya.requests.model.util.pagination.Sort;
 import java.util.List;
