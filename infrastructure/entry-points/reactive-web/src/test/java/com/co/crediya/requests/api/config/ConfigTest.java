@@ -5,6 +5,7 @@ import com.co.crediya.requests.api.RouterRest;
 import com.co.crediya.requests.api.client.AuthServiceClient;
 import com.co.crediya.requests.usecase.loan.ApplyForLoanUseCase;
 import com.co.crediya.requests.usecase.loan.FindLoanApplicationsUseCase;
+import com.co.crediya.requests.usecase.loan.UpdateAutoApprovedLoanUseCase;
 import com.co.crediya.requests.usecase.loan.UpdateLoanApplicationUseCase;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +25,7 @@ class ConfigTest {
   @MockitoBean private AuthServiceClient authServiceClient;
 	@MockitoBean private FindLoanApplicationsUseCase findLoanApplicationsUseCase;
   @MockitoBean private UpdateLoanApplicationUseCase updateLoanApplicationUseCase;
+	@MockitoBean private UpdateAutoApprovedLoanUseCase updateAutoApprovedLoanUseCase;
 
   @Test
   void corsConfigurationShouldAllowOrigins() {

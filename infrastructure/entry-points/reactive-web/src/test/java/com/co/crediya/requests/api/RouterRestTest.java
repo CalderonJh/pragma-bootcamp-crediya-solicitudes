@@ -13,6 +13,7 @@ import com.co.crediya.requests.usecase.loan.FindLoanApplicationsUseCase;
 import java.math.BigDecimal;
 import java.util.UUID;
 
+import com.co.crediya.requests.usecase.loan.UpdateAutoApprovedLoanUseCase;
 import com.co.crediya.requests.usecase.loan.UpdateLoanApplicationUseCase;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,6 +34,7 @@ class RouterRestTest {
   @MockitoBean private FindLoanApplicationsUseCase findLoanApplicationsUseCase;
   @MockitoBean private AuthServiceClient authServiceClient;
   @MockitoBean private UpdateLoanApplicationUseCase updateLoanApplicationUseCase;
+	@MockitoBean private UpdateAutoApprovedLoanUseCase updateAutoApprovedLoanUseCase;
 
   @Test
   @DisplayName("POST - Apply for Loan")

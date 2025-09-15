@@ -60,7 +60,8 @@ class UpdateLoanApplicationUseCaseTest {
 
     LoanStatus newStatus =
         new LoanStatus(statusId, NotifyStatusType.APPROVED.getDbValue(), "Aprobado");
-    EmailMessage emailMessage = new EmailMessage(UUID.randomUUID(), "msgKey", "Subject", "Body");
+    EmailMessage emailMessage =
+        new EmailMessage(UUID.randomUUID(), "msgKey", "Subject", "Body", null);
 
     when(loanApplicationRepository.getById(applicationId)).thenReturn(Mono.just(loanApplication));
     when(loanStatusRepository.getById(statusId)).thenReturn(Mono.just(newStatus));

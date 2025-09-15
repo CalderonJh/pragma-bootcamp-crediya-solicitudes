@@ -2,6 +2,7 @@ package com.co.crediya.requests.usecase.loan;
 
 import static com.co.crediya.requests.constant.Constant.DEFAULT_LOAN_STATUS;
 import static com.co.crediya.requests.util.validation.ReactiveValidators.*;
+import static reactor.core.publisher.Mono.defer;
 
 import com.co.crediya.requests.constant.NotifyStatusType;
 import com.co.crediya.requests.constant.RoleType;
@@ -42,6 +43,7 @@ public class ApplyForLoanUseCase {
   private Mono<LoanApplication> assessDebtCapacity(LoanApplication loanApplication) {
     boolean automaticApproval = loanApplication.getLoanType().getAutoValidate();
     if (!automaticApproval) return Mono.just(loanApplication);
+
     return applicantService
         .getApplicantById(loanApplication.getApplicantId())
         .switchIfEmpty(
@@ -78,8 +80,13 @@ public class ApplyForLoanUseCase {
   private Mono<LoanApplication> validateExistsLoanType(LoanApplication loanApplication) {
     UUID loanTypeId = loanApplication.getLoanType().getId();
     return notNull(loanApplication.getLoanType().getId(), "Loan type id")
-        .then(loanTypeRepository.findLoanTypeById(loanTypeId))
-        .switchIfEmpty(Mono.error(new DataNotFoundException("Loan type does not exist")))
+        .then(
+            defer(
+                () ->
+                    loanTypeRepository
+                        .findLoanTypeById(loanTypeId)
+                        .switchIfEmpty(
+                            Mono.error(new DataNotFoundException("Loan type does not exist")))))
         .map(
             loanType -> {
               loanApplication.setLoanType(loanType);

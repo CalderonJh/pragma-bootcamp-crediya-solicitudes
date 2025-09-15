@@ -3,22 +3,19 @@ package com.co.crediya.requests.usecase.loan;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
+import com.co.crediya.requests.constant.Constant;
+import com.co.crediya.requests.constant.NotifyStatusType;
 import com.co.crediya.requests.constant.RoleType;
 import com.co.crediya.requests.exception.BusinessRuleException;
 import com.co.crediya.requests.exception.DataNotFoundException;
 import com.co.crediya.requests.exception.InternalException;
 import com.co.crediya.requests.exception.PermissionException;
-import com.co.crediya.requests.model.loanapplication.Actor;
-import com.co.crediya.requests.model.loanapplication.LoanApplication;
-import com.co.crediya.requests.model.loanapplication.LoanType;
-import com.co.crediya.requests.model.loanapplication.gateways.LoanApplicationRepository;
-import com.co.crediya.requests.model.loanapplication.gateways.LoanStatusRepository;
-import com.co.crediya.requests.model.loanapplication.gateways.LoanTypeRepository;
-import com.co.crediya.requests.constant.Constant;
-import java.math.BigDecimal;
-import java.util.UUID;
-
+import com.co.crediya.requests.model.loanapplication.*;
+import com.co.crediya.requests.model.loanapplication.gateways.*;
 import com.co.crediya.requests.util.validation.MessageTemplate;
+import java.math.BigDecimal;
+import java.util.Collections;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -29,6 +26,8 @@ class ApplyForLoanUseCaseTest {
   private LoanApplicationRepository loanApplicationRepository;
   private LoanStatusRepository loanStatusRepository;
   private LoanTypeRepository loanTypeRepository;
+  private DebtCapacityService debtCapacityService;
+  private ApplicantService applicantService;
   private ApplyForLoanUseCase useCase;
   private LoanApplication loanApplication;
   private Actor actor;
@@ -38,9 +37,15 @@ class ApplyForLoanUseCaseTest {
     loanApplicationRepository = mock(LoanApplicationRepository.class);
     loanStatusRepository = mock(LoanStatusRepository.class);
     loanTypeRepository = mock(LoanTypeRepository.class);
+    debtCapacityService = mock(DebtCapacityService.class);
+    applicantService = mock(ApplicantService.class);
     useCase =
         new ApplyForLoanUseCase(
-            loanApplicationRepository, loanStatusRepository, loanTypeRepository);
+            loanApplicationRepository,
+            loanStatusRepository,
+            loanTypeRepository,
+            debtCapacityService,
+            applicantService);
 
     loanApplication =
         LoanApplication.builder()
@@ -48,7 +53,7 @@ class ApplyForLoanUseCaseTest {
             .applicantId(UUID.randomUUID())
             .amount(BigDecimal.valueOf(1000000))
             .termInMonths(12)
-            .loanType(new LoanType(UUID.randomUUID()))
+            .loanType(LoanType.builder().id(UUID.randomUUID()).autoValidate(false).build())
             .loanStatus(null)
             .build();
     actor = new Actor(UUID.randomUUID(), RoleType.USER.getValue());
@@ -140,6 +145,44 @@ class ApplyForLoanUseCaseTest {
 
     verify(loanTypeRepository).findLoanTypeById(loanApplication.getLoanType().getId());
     verify(loanStatusRepository).findLoanStatusByName(Constant.DEFAULT_LOAN_STATUS);
+    verify(loanApplicationRepository).saveLoanApplication(loanApplication);
+  }
+
+  @Test
+  @DisplayName("Successful automatic approval loan application")
+  void successfulAutomaticApprovalApplication() {
+    loanApplication.getLoanType().setAutoValidate(true);
+
+    when(loanTypeRepository.findLoanTypeById(loanApplication.getLoanType().getId()))
+        .thenReturn(Mono.just(loanApplication.getLoanType()));
+
+    when(loanStatusRepository.findLoanStatusByName(Constant.DEFAULT_LOAN_STATUS))
+        .thenReturn(Mono.just(new LoanStatus(UUID.randomUUID(), Constant.DEFAULT_LOAN_STATUS, "")));
+    when(loanApplicationRepository.saveLoanApplication(loanApplication))
+        .thenReturn(Mono.just(loanApplication));
+
+    when(applicantService.getApplicantById(loanApplication.getApplicantId()))
+        .thenReturn(
+            Mono.just(
+                new Applicant(
+                    UUID.randomUUID(), "John", "Doe", "jhondoe@email.com", BigDecimal.ONE)));
+
+    when(loanApplicationRepository.getByUserIdAndStatus(
+            loanApplication.getApplicantId(), NotifyStatusType.APPROVED.getDbValue()))
+        .thenReturn(Mono.just(Collections.emptyList()));
+
+    when(debtCapacityService.validateDebtCapacity(any(), any(), any()))
+        .thenReturn(Mono.just("debt-capacity-msg-id"));
+
+    StepVerifier.create(useCase.execute(loanApplication, actor)).verifyComplete();
+
+    verify(loanTypeRepository).findLoanTypeById(loanApplication.getLoanType().getId());
+    verify(loanStatusRepository).findLoanStatusByName(Constant.DEFAULT_LOAN_STATUS);
+    verify(applicantService).getApplicantById(loanApplication.getApplicantId());
+    verify(loanApplicationRepository)
+        .getByUserIdAndStatus(
+            loanApplication.getApplicantId(), NotifyStatusType.APPROVED.getDbValue());
+    verify(debtCapacityService).validateDebtCapacity(any(), any(), any());
     verify(loanApplicationRepository).saveLoanApplication(loanApplication);
   }
 }

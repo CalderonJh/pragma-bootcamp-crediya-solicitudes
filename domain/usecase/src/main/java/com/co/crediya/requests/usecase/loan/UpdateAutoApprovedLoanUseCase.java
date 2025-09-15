@@ -1,5 +1,8 @@
 package com.co.crediya.requests.usecase.loan;
 
+import static com.co.crediya.requests.util.validation.ReactiveValidators.notNull;
+import static reactor.core.publisher.Mono.defer;
+
 import com.co.crediya.requests.constant.LoanStatusType;
 import com.co.crediya.requests.constant.NotifyStatusType;
 import com.co.crediya.requests.exception.DataNotFoundException;
@@ -30,13 +33,19 @@ public class UpdateAutoApprovedLoanUseCase {
       Logger.getLogger(UpdateAutoApprovedLoanUseCase.class.getName());
 
   public Mono<LoanApplication> execute(UUID applicationId, String result) {
-		logger.info(() -> "Starting update for applicationId: " + applicationId + " with result: " + result);
-    return getLoanApplication(applicationId)
-        .doOnNext(apl -> logger.info(apl::toString))
+    logger.info(
+        () ->
+            "Starting auto-update for applicationId: " + applicationId + " with result: " + result);
+    return validateParams(applicationId, result)
+        .then(defer(() -> getLoanApplication(applicationId)))
         .flatMap(this::validateLoanType)
         .flatMap(apl -> updateLoanApplication(apl, result))
         .zipWhen(this::getApplicant)
         .flatMap(t -> notifyUser(t.getT1(), t.getT2()));
+  }
+
+  private Mono<Void> validateParams(UUID applicationId, String result) {
+    return notNull(applicationId, "Loan application id").then(notNull(result, "Result"));
   }
 
   private Mono<Applicant> getApplicant(LoanApplication application) {
@@ -55,21 +64,8 @@ public class UpdateAutoApprovedLoanUseCase {
             Mono.error(new DataNotFoundException(MessageTemplate.NOT_FOUND.render("Loan status"))))
         .flatMap(
             status -> {
-              if (statusType == LoanStatusType.MANUAL_REVIEW) {
-                return updateToManualReview(loanApplication);
-              }
               loanApplication.setLoanStatus(status);
               return loanApplicationRepository.saveLoanApplication(loanApplication);
-            });
-  }
-
-  private Mono<LoanApplication> updateToManualReview(LoanApplication la) {
-    return loanStatusRepository
-        .findLoanStatusByName(LoanStatusType.MANUAL_REVIEW.getDbValue())
-        .flatMap(
-            status -> {
-              la.setLoanStatus(status);
-              return loanApplicationRepository.saveLoanApplication(la);
             });
   }
 
@@ -93,12 +89,12 @@ public class UpdateAutoApprovedLoanUseCase {
         NotifyStatusType.fromDBValue(loanApplication.getLoanStatus().getName());
     return emailMessageRepository
         .getByKey(statusType.getMsgKey())
-        .flatMap(msg -> resolveParams(loanApplication, msg, applicant))
+        .flatMap(msg -> resolveMessageParams(loanApplication, msg, applicant))
         .flatMap(msg -> notificationService.sendNotificationByEmail(applicant, msg))
         .thenReturn(loanApplication);
   }
 
-  private Mono<EmailMessage> resolveParams(
+  private Mono<EmailMessage> resolveMessageParams(
       LoanApplication loanApplication, EmailMessage message, Applicant applicant) {
     NotifyStatusType statusType =
         NotifyStatusType.fromDBValue(loanApplication.getLoanStatus().getName());
