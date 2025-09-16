@@ -1,5 +1,6 @@
 package com.co.crediya.requests.usecase.loan;
 
+import static com.co.crediya.requests.util.validation.ErrorMessage.LOAN_TYPE_NO_AUTO_APPROVAL;
 import static com.co.crediya.requests.util.validation.ReactiveValidators.notNull;
 import static reactor.core.publisher.Mono.defer;
 
@@ -81,7 +82,7 @@ public class UpdateAutoApprovedLoanUseCase {
   private Mono<LoanApplication> validateLoanType(LoanApplication loanApplication) {
     return Boolean.TRUE.equals(loanApplication.getLoanType().getAutoValidate())
         ? Mono.just(loanApplication)
-        : Mono.error(new IllegalArgumentException("Loan type is not eligible for auto-approval"));
+        : Mono.error(new IllegalArgumentException(LOAN_TYPE_NO_AUTO_APPROVAL));
   }
 
   private Mono<LoanApplication> notifyUser(LoanApplication loanApplication, Applicant applicant) {
@@ -89,6 +90,10 @@ public class UpdateAutoApprovedLoanUseCase {
         NotifyStatusType.fromDBValue(loanApplication.getLoanStatus().getName());
     return emailMessageRepository
         .getByKey(statusType.getMsgKey())
+        .switchIfEmpty(
+            Mono.error(
+                new DataNotFoundException(
+                    MessageTemplate.NOT_FOUND.render("Email message template"))))
         .flatMap(msg -> resolveMessageParams(loanApplication, msg, applicant))
         .flatMap(msg -> notificationService.sendNotificationByEmail(applicant, msg))
         .thenReturn(loanApplication);
