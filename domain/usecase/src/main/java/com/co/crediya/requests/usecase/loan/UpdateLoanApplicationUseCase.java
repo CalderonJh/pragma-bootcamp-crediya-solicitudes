@@ -33,9 +33,15 @@ public class UpdateLoanApplicationUseCase {
     return validateRole(actor)
         .then(validateInputs(applicationId, statusId))
         .then(Mono.defer(() -> findLoanApplication(applicationId)))
-        .flatMap(apl -> updateLoanStatus(apl, statusId))
-        .flatMap(this::notifyUserIfNeeded)
-        .flatMap(this::updateActiveLoansReport);
+        .flatMap(
+            stored -> {
+              if (statusId.equals(stored.getLoanStatus().getId())) {
+                return Mono.just(stored);
+              }
+              return updateLoanStatus(stored, statusId)
+                  .flatMap(this::notifyUserIfNeeded)
+                  .flatMap(this::updateActiveLoansReport);
+            });
   }
 
   private Mono<Actor> validateRole(Actor actor) {

@@ -81,7 +81,7 @@ entrypoint:
   sqs:
     region: "us-east-1"
     # endpoint: "http://localhost:4566"
-    queueUrl: "https://sqs.us-east-1.amazonaws.com/187483722151/LoanAplResultSQS"
+    queueUrl: "${AWS_LOAN_APL_RESULT_SQS_QUEUE_URL}"
     waitTimeSeconds: 20
     maxNumberOfMessages: 10
     visibilityTimeoutSeconds: 10

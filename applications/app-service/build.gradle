@@ -21,6 +21,7 @@ tasks.register('explodedJar', Copy) {
     into layout.buildDirectory.dir("exploded")
 }
 
+
 jar {
     // To disable the *-plain.jar
     enabled = false

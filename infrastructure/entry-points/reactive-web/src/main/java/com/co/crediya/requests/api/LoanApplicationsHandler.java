@@ -13,9 +13,9 @@ import com.co.crediya.requests.api.mapper.LoanApplicationMapper;
 import com.co.crediya.requests.api.util.ApiClient;
 import com.co.crediya.requests.api.util.WebTools;
 import com.co.crediya.requests.exception.DataNotFoundException;
-import com.co.crediya.requests.model.util.Actor;
 import com.co.crediya.requests.model.loanapplication.LoanApplication;
 import com.co.crediya.requests.model.loanapplication.LoanApplicationFilter;
+import com.co.crediya.requests.model.util.Actor;
 import com.co.crediya.requests.model.util.pagination.Page;
 import com.co.crediya.requests.usecase.loan.ApplyForLoanUseCase;
 import com.co.crediya.requests.usecase.loan.FindLoanApplicationsUseCase;
@@ -40,6 +40,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.reactive.TransactionalOperator;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
@@ -53,6 +54,7 @@ public class LoanApplicationsHandler {
   private final UpdateLoanApplicationUseCase updateLoanApplicationUseCase;
   private final UpdateAutoApprovedLoanUseCase updateAutoApprovedLoanUseCase;
   private final AuthServiceClient authServiceClient;
+  private final TransactionalOperator transactionalOperator;
 
   private static final Logger logger = Logger.getLogger(LoanApplicationsHandler.class.getName());
 
@@ -87,8 +89,9 @@ public class LoanApplicationsHandler {
                         LoanApplication loanApplication =
                             LoanApplicationMapper.toModel(tuple.getT2(), actorId);
                         UserDTO applicant = tuple.getT1();
-                        return applyForLoanUseCase.execute(
-                            loanApplication, new Actor(applicant.id(), applicant.role()));
+                        return transactionalOperator.transactional(
+                            applyForLoanUseCase.execute(
+                                loanApplication, new Actor(applicant.id(), applicant.role())));
                       });
             })
         .then(ServerResponse.status(HttpStatus.CREATED).build());
@@ -170,12 +173,13 @@ public class LoanApplicationsHandler {
             actor -> {
               Optional<String> applicationId = serverRequest.queryParam(LOAN_APL_ID_PARAM);
               Optional<String> statusId = serverRequest.queryParam(LOAN_STATUS_ID_PARAM);
-              return updateLoanApplicationUseCase
-                  .execute(
-                      applicationId.map(UUID::fromString).orElse(null),
-                      statusId.map(UUID::fromString).orElse(null),
-                      actor)
-                  .flatMap(res -> ServerResponse.status(HttpStatus.OK).bodyValue(res));
+              return transactionalOperator.transactional(
+                  updateLoanApplicationUseCase
+                      .execute(
+                          applicationId.map(UUID::fromString).orElse(null),
+                          statusId.map(UUID::fromString).orElse(null),
+                          actor)
+                      .flatMap(res -> ServerResponse.status(HttpStatus.OK).bodyValue(res)));
             });
   }
 
@@ -185,9 +189,11 @@ public class LoanApplicationsHandler {
             actor -> {
               Optional<String> applicationId = serverRequest.queryParam(LOAN_APL_ID_PARAM);
               Optional<String> result = serverRequest.queryParam("result");
-              return updateAutoApprovedLoanUseCase
-                  .execute(applicationId.map(UUID::fromString).orElse(null), result.orElse(null))
-                  .flatMap(res -> ServerResponse.status(HttpStatus.OK).bodyValue(res));
+              return transactionalOperator.transactional(
+                  updateAutoApprovedLoanUseCase
+                      .execute(
+                          applicationId.map(UUID::fromString).orElse(null), result.orElse(null))
+                      .flatMap(res -> ServerResponse.status(HttpStatus.OK).bodyValue(res)));
             });
   }
 }

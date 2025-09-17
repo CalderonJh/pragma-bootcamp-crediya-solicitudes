@@ -12,10 +12,7 @@ import com.co.crediya.requests.model.loanapplication.Applicant;
 import com.co.crediya.requests.model.loanapplication.LoanApplication;
 import com.co.crediya.requests.model.loanapplication.LoanStatus;
 import com.co.crediya.requests.model.loanapplication.LoanType;
-import com.co.crediya.requests.model.loanapplication.gateways.ApplicantService;
-import com.co.crediya.requests.model.loanapplication.gateways.LoanApplicationRepository;
-import com.co.crediya.requests.model.loanapplication.gateways.LoanStatusRepository;
-import com.co.crediya.requests.model.loanapplication.gateways.UserNotificationService;
+import com.co.crediya.requests.model.loanapplication.gateways.*;
 import com.co.crediya.requests.model.notifications.EmailMessage;
 import com.co.crediya.requests.model.notifications.gateways.EmailMessageRepository;
 import com.co.crediya.requests.util.validation.MessageTemplate;
@@ -28,13 +25,28 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 class UpdateAutoApprovedLoanUseCaseTest {
+
+  private static final UUID DEFAULT_APPLICATION_ID = UUID.randomUUID();
+  private static final UUID DEFAULT_APPLICANT_ID = UUID.randomUUID();
+  private static final BigDecimal DEFAULT_AMOUNT = BigDecimal.valueOf(1000);
+  private static final int DEFAULT_TERM = 12;
+
+  private static final LoanStatus PENDING_STATUS =
+      new LoanStatus(UUID.randomUUID(), LoanStatusType.PENDING.getDbValue(), "Pendiente");
+  private static final LoanStatus APPROVED_STATUS =
+      new LoanStatus(UUID.randomUUID(), NotifyStatusType.APPROVED.getDbValue(), "Aprobado");
+  private static final LoanStatus REJECTED_STATUS =
+      new LoanStatus(UUID.randomUUID(), LoanStatusType.REJECTED.getDbValue(), "Rechazado");
+
   private LoanApplicationRepository loanApplicationRepository;
   private LoanStatusRepository loanStatusRepository;
   private UserNotificationService userNotificationService;
   private EmailMessageRepository emailMessageRepository;
   private ApplicantService applicantService;
-
+  private UpdateReportService updateReportService;
   private UpdateAutoApprovedLoanUseCase useCase;
+
+  private LoanApplication baseLoanApplication;
 
   @BeforeEach
   void setUp() {
@@ -43,6 +55,7 @@ class UpdateAutoApprovedLoanUseCaseTest {
     userNotificationService = mock(UserNotificationService.class);
     emailMessageRepository = mock(EmailMessageRepository.class);
     applicantService = mock(ApplicantService.class);
+    updateReportService = mock(UpdateReportService.class);
 
     useCase =
         new UpdateAutoApprovedLoanUseCase(
@@ -50,122 +63,104 @@ class UpdateAutoApprovedLoanUseCaseTest {
             userNotificationService,
             loanStatusRepository,
             applicantService,
-            emailMessageRepository);
-  }
+            emailMessageRepository,
+            updateReportService);
 
-  @Test
-  @DisplayName("Must update loan application status and notify user")
-  void mustUpdateLoanApplicationStatusAndNotifyUser() {
-    UUID applicationId = UUID.randomUUID();
-    UUID applicantId = UUID.randomUUID();
-
-    LoanApplication loanApplication =
+    baseLoanApplication =
         LoanApplication.builder()
-            .id(applicationId)
+            .id(DEFAULT_APPLICATION_ID)
+            .applicantId(DEFAULT_APPLICANT_ID)
             .loanType(
                 LoanType.builder()
                     .description("Personal")
                     .autoValidate(true)
                     .interestRate(BigDecimal.valueOf(0.12))
                     .build())
-            .applicantId(applicantId)
-            .amount(BigDecimal.valueOf(1000))
-            .termInMonths(12)
-            .loanStatus(new LoanStatus(UUID.randomUUID(), "PENDING", "Pendiente"))
+            .amount(DEFAULT_AMOUNT)
+            .termInMonths(DEFAULT_TERM)
+            .loanStatus(PENDING_STATUS)
             .build();
+  }
 
-    LoanStatus newStatus =
-        new LoanStatus(UUID.randomUUID(), NotifyStatusType.APPROVED.getDbValue(), "Aprobado");
-    Applicant applicant =
-        new Applicant(applicantId, "John", "Doe", "email@email.com", BigDecimal.TEN);
-    EmailMessage emailMessage =
-        new EmailMessage(
-            UUID.randomUUID(), NotifyStatusType.APPROVED.getMsgKey(), "Subject", "Body", null);
+  private Applicant mockApplicant() {
+    return new Applicant(DEFAULT_APPLICANT_ID, "John", "Doe", "email@email.com", BigDecimal.TEN);
+  }
 
-    when(loanApplicationRepository.getById(applicationId)).thenReturn(Mono.just(loanApplication));
+  private EmailMessage mockEmailMessage(NotifyStatusType statusType) {
+    return new EmailMessage(UUID.randomUUID(), "Subject", "</html>", statusType.getMsgKey(), null);
+  }
+
+  private void mockCommonInteractions(
+      LoanApplication loanApplication,
+      LoanStatus newStatus,
+      Applicant applicant,
+      EmailMessage emailMessage) {
+    when(loanApplicationRepository.getById(loanApplication.getId()))
+        .thenReturn(Mono.just(loanApplication));
     when(loanStatusRepository.findLoanStatusByName(newStatus.getName()))
         .thenReturn(Mono.just(newStatus));
     when(loanApplicationRepository.saveLoanApplication(any()))
         .thenAnswer(inv -> Mono.just(inv.getArgument(0)));
-    when(applicantService.getApplicantById(applicantId)).thenReturn(Mono.just(applicant));
-    when(emailMessageRepository.getByKey(any())).thenReturn(Mono.just(emailMessage));
+    when(applicantService.getApplicantById(loanApplication.getApplicantId()))
+        .thenReturn(Mono.just(applicant));
+    when(emailMessageRepository.getByKey(emailMessage.getKey()))
+        .thenReturn(Mono.just(emailMessage));
     when(userNotificationService.sendNotificationByEmail(eq(applicant), any()))
         .thenReturn(Mono.just("msgId-123"));
+  }
 
-    StepVerifier.create(useCase.execute(applicationId, newStatus.getName()))
+  @Test
+  @DisplayName("Must update loan application status, notify user and update active loans report")
+  void mustUpdateLoanApplicationStatusAndNotifyUser() {
+    LoanApplication loanApplication = baseLoanApplication.toBuilder().build();
+    Applicant applicant = mockApplicant();
+    EmailMessage emailMessage = mockEmailMessage(NotifyStatusType.APPROVED);
+
+    mockCommonInteractions(loanApplication, APPROVED_STATUS, applicant, emailMessage);
+    when(updateReportService.update(anyLong(), any())).thenReturn(Mono.just("report-ok"));
+
+    StepVerifier.create(useCase.execute(DEFAULT_APPLICATION_ID, APPROVED_STATUS.getName()))
         .expectNextMatches(
             updated ->
                 updated.getLoanStatus().getName().equals(NotifyStatusType.APPROVED.getDbValue()))
         .verifyComplete();
 
-    verify(loanApplicationRepository).getById(applicationId);
-    verify(loanStatusRepository).findLoanStatusByName(newStatus.getName());
-    verify(loanApplicationRepository).saveLoanApplication(any());
-    verify(applicantService).getApplicantById(applicantId);
-    verify(emailMessageRepository).getByKey(NotifyStatusType.APPROVED.getMsgKey());
-    verify(userNotificationService).sendNotificationByEmail(eq(applicant), any());
+    verify(updateReportService).update(1L, DEFAULT_AMOUNT);
   }
 
   @Test
   @DisplayName("Must fail when loan application not found")
   void mustFailWhenLoanApplicationNotFound() {
-    UUID applicationId = UUID.randomUUID();
+    UUID randomId = UUID.randomUUID();
+    when(loanApplicationRepository.getById(randomId)).thenReturn(Mono.empty());
 
-    when(loanApplicationRepository.getById(applicationId)).thenReturn(Mono.empty());
-
-    StepVerifier.create(useCase.execute(applicationId, "APPROVED"))
+    StepVerifier.create(useCase.execute(randomId, APPROVED_STATUS.getName()))
         .expectErrorMatches(
             ex ->
                 ex instanceof IllegalArgumentException
                     && ex.getMessage().equals(MessageTemplate.NOT_FOUND.render("Loan application")))
         .verify();
 
-    verify(loanApplicationRepository).getById(applicationId);
+    verify(loanApplicationRepository).getById(randomId);
     verifyNoInteractions(
-        loanStatusRepository, applicantService, userNotificationService, emailMessageRepository);
+        loanStatusRepository,
+        applicantService,
+        userNotificationService,
+        emailMessageRepository,
+        updateReportService);
   }
 
   @Test
   @DisplayName("Must not build payment plan when status is not APPROVED")
   void mustNotBuildPaymentPlanWhenStatusIsNotApproved() {
-    UUID applicationId = UUID.randomUUID();
-    UUID applicantId = UUID.randomUUID();
-
     LoanApplication loanApplication =
-        LoanApplication.builder()
-            .id(applicationId)
-            .applicantId(applicantId)
-            .loanType(
-                LoanType.builder()
-                    .description("Personal")
-                    .autoValidate(true)
-                    .interestRate(BigDecimal.valueOf(0.12))
-                    .build())
-            .amount(BigDecimal.valueOf(1000))
-            .termInMonths(12)
-            .loanStatus(
-                new LoanStatus(
-                    UUID.randomUUID(), LoanStatusType.REJECTED.getDbValue(), "Rechazado"))
-            .build();
+        baseLoanApplication.toBuilder().loanStatus(PENDING_STATUS).build();
+    Applicant applicant = mockApplicant();
+    EmailMessage emailMessage = mockEmailMessage(NotifyStatusType.REJECTED);
 
-    Applicant applicant =
-        new Applicant(applicantId, "Jane", "Doe", "email@email.com", BigDecimal.TEN);
-    EmailMessage emailMessage =
-        new EmailMessage(
-            UUID.randomUUID(), NotifyStatusType.REJECTED.getMsgKey(), "Subject", "Body", null);
+    mockCommonInteractions(loanApplication, REJECTED_STATUS, applicant, emailMessage);
 
-    when(loanApplicationRepository.getById(applicationId)).thenReturn(Mono.just(loanApplication));
-    when(loanStatusRepository.findLoanStatusByName(LoanStatusType.REJECTED.getDbValue()))
-        .thenReturn(Mono.just(loanApplication.getLoanStatus()));
-    when(loanApplicationRepository.saveLoanApplication(any()))
-        .thenAnswer(inv -> Mono.just(inv.getArgument(0)));
-    when(applicantService.getApplicantById(applicantId)).thenReturn(Mono.just(applicant));
-    when(emailMessageRepository.getByKey(NotifyStatusType.REJECTED.getMsgKey()))
-        .thenReturn(Mono.just(emailMessage));
-    when(userNotificationService.sendNotificationByEmail(eq(applicant), any()))
-        .thenReturn(Mono.just("msgId-456"));
-
-    StepVerifier.create(useCase.execute(applicationId, LoanStatusType.REJECTED.getDbValue()))
+    StepVerifier.create(useCase.execute(DEFAULT_APPLICATION_ID, REJECTED_STATUS.getName()))
         .assertNext(
             updated -> {
               assertEquals(LoanStatusType.REJECTED.getDbValue(), updated.getLoanStatus().getName());
@@ -176,7 +171,32 @@ class UpdateAutoApprovedLoanUseCaseTest {
             })
         .verifyComplete();
 
-    verify(emailMessageRepository).getByKey(NotifyStatusType.REJECTED.getMsgKey());
-    verify(userNotificationService).sendNotificationByEmail(eq(applicant), any());
+    verifyNoInteractions(updateReportService);
+  }
+
+  @Test
+  @DisplayName("Must return same loan when status is already up to date")
+  void mustReturnSameLoanWhenStatusAlreadyUpToDate() {
+    LoanApplication loanApplication =
+        baseLoanApplication.toBuilder()
+            .loanStatus(APPROVED_STATUS)
+            .amount(BigDecimal.valueOf(2000))
+            .termInMonths(6)
+            .build();
+
+    when(loanApplicationRepository.getById(DEFAULT_APPLICATION_ID))
+        .thenReturn(Mono.just(loanApplication));
+
+    StepVerifier.create(useCase.execute(DEFAULT_APPLICATION_ID, APPROVED_STATUS.getName()))
+        .expectNext(loanApplication)
+        .verifyComplete();
+
+    verify(loanApplicationRepository).getById(DEFAULT_APPLICATION_ID);
+    verifyNoInteractions(
+        loanStatusRepository,
+        applicantService,
+        emailMessageRepository,
+        userNotificationService,
+        updateReportService);
   }
 }

@@ -30,19 +30,28 @@ public class UpdateAutoApprovedLoanUseCase {
   private final LoanStatusRepository loanStatusRepository;
   private final ApplicantService applicantService;
   private final EmailMessageRepository emailMessageRepository;
+  private final UpdateReportService updateReportService;
+
   private static final Logger logger =
       Logger.getLogger(UpdateAutoApprovedLoanUseCase.class.getName());
 
   public Mono<LoanApplication> execute(UUID applicationId, String result) {
-    logger.info(
-        () ->
-            "Starting auto-update for applicationId: " + applicationId + " with result: " + result);
+    logger.info(() -> "auto-update for applicationId: " + applicationId + " to: " + result);
+
     return validateParams(applicationId, result)
         .then(defer(() -> getLoanApplication(applicationId)))
-        .flatMap(this::validateLoanType)
-        .flatMap(apl -> updateLoanApplication(apl, result))
-        .zipWhen(this::getApplicant)
-        .flatMap(t -> notifyUser(t.getT1(), t.getT2()));
+        .flatMap(
+            apl -> {
+              LoanStatusType status = LoanStatusType.fromDBValue(result);
+              if (apl.getLoanStatus().getName().equals(status.getDbValue())) {
+                return Mono.just(apl);
+              }
+              return validateLoanType(apl)
+                  .flatMap(a -> updateLoanApplication(a, status))
+                  .flatMap(this::updateActiveLoansReport)
+                  .zipWhen(this::getApplicant)
+                  .flatMap(t -> notifyUser(t.getT1(), t.getT2()));
+            });
   }
 
   private Mono<Void> validateParams(UUID applicationId, String result) {
@@ -57,10 +66,9 @@ public class UpdateAutoApprovedLoanUseCase {
   }
 
   private Mono<LoanApplication> updateLoanApplication(
-      LoanApplication loanApplication, String result) {
-    LoanStatusType statusType = LoanStatusType.fromDBValue(result);
+      LoanApplication loanApplication, LoanStatusType newStatus) {
     return loanStatusRepository
-        .findLoanStatusByName(statusType.getDbValue())
+        .findLoanStatusByName(newStatus.getDbValue())
         .switchIfEmpty(
             Mono.error(new DataNotFoundException(MessageTemplate.NOT_FOUND.render("Loan status"))))
         .flatMap(
@@ -147,5 +155,13 @@ public class UpdateAutoApprovedLoanUseCase {
     }
 
     return installments;
+  }
+
+  private Mono<LoanApplication> updateActiveLoansReport(LoanApplication loanApplication) {
+    if (LoanStatusType.APPROVED.getDbValue().equals(loanApplication.getLoanStatus().getName()))
+      return updateReportService
+          .update(1L, loanApplication.getAmount())
+          .flatMap(msgId -> Mono.just(loanApplication));
+    else return Mono.just(loanApplication);
   }
 }

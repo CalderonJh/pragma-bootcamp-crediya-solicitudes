@@ -4,6 +4,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
+import com.co.crediya.requests.constant.LoanStatusType;
 import com.co.crediya.requests.constant.NotifyStatusType;
 import com.co.crediya.requests.constant.RoleType;
 import com.co.crediya.requests.exception.DataNotFoundException;
@@ -18,6 +19,7 @@ import com.co.crediya.requests.model.notifications.EmailMessage;
 import com.co.crediya.requests.model.notifications.gateways.EmailMessageRepository;
 import com.co.crediya.requests.model.util.Actor;
 import com.co.crediya.requests.util.validation.MessageTemplate;
+import java.math.BigDecimal;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -59,6 +61,7 @@ class UpdateLoanApplicationUseCaseTest {
             .id(applicationId)
             .applicantId(applicantId)
             .loanStatus(new LoanStatus(UUID.randomUUID(), "PENDING", "Pendiente"))
+            .amount(BigDecimal.valueOf(1000))
             .build();
 
     LoanStatus newStatus =
@@ -73,6 +76,7 @@ class UpdateLoanApplicationUseCaseTest {
     when(emailMessageRepository.getByKey(any())).thenReturn(Mono.just(emailMessage));
     when(userNotificationService.sendNotificationByEmail(eq(applicantId), any()))
         .thenReturn(Mono.just("msgId-123"));
+    when(updateReportService.update(anyLong(), any())).thenReturn(Mono.just("report-updated"));
 
     Actor actor = new Actor(UUID.randomUUID(), RoleType.CONSULTANT.getValue());
 
@@ -90,6 +94,7 @@ class UpdateLoanApplicationUseCaseTest {
     verify(loanApplicationRepository).saveLoanApplication(any());
     verify(emailMessageRepository).getByKey(NotifyStatusType.APPROVED.getMsgKey());
     verify(userNotificationService).sendNotificationByEmail(eq(applicantId), any());
+    verify(updateReportService).update(1L, loanApplication.getAmount());
   }
 
   @Test
@@ -119,7 +124,12 @@ class UpdateLoanApplicationUseCaseTest {
     Actor actor = new Actor(UUID.randomUUID(), RoleType.CONSULTANT.getValue());
 
     LoanApplication loanApplication =
-        LoanApplication.builder().id(applicationId).applicantId(applicantId).build();
+        LoanApplication.builder()
+            .id(applicationId)
+            .loanStatus(
+                new LoanStatus(UUID.randomUUID(), LoanStatusType.PENDING.getDbValue(), "Pendiente"))
+            .applicantId(applicantId)
+            .build();
 
     when(loanApplicationRepository.getById(applicationId)).thenReturn(Mono.just(loanApplication));
     when(loanStatusRepository.getById(statusId)).thenReturn(Mono.empty());
@@ -134,7 +144,10 @@ class UpdateLoanApplicationUseCaseTest {
     verify(loanApplicationRepository).getById(applicationId);
     verify(loanStatusRepository).getById(statusId);
     verifyNoMoreInteractions(
-        loanApplicationRepository, userNotificationService, emailMessageRepository);
+        loanApplicationRepository,
+        userNotificationService,
+        emailMessageRepository,
+        updateReportService);
   }
 
   @Test
@@ -145,7 +158,13 @@ class UpdateLoanApplicationUseCaseTest {
     Actor actor = new Actor(UUID.randomUUID(), RoleType.CONSULTANT.getValue());
 
     LoanApplication loanApplication =
-        LoanApplication.builder().id(applicationId).applicantId(applicantId).build();
+        LoanApplication.builder()
+            .id(applicationId)
+            .applicantId(applicantId)
+            .loanStatus(
+                new LoanStatus(UUID.randomUUID(), LoanStatusType.PENDING.getDbValue(), "Pendiente"))
+            .amount(BigDecimal.TEN)
+            .build();
     LoanStatus newStatus =
         new LoanStatus(statusId, NotifyStatusType.APPROVED.getDbValue(), "Aprobado");
 
@@ -165,7 +184,7 @@ class UpdateLoanApplicationUseCaseTest {
 
     verify(loanApplicationRepository).saveLoanApplication(any());
     verify(emailMessageRepository).getByKey(NotifyStatusType.APPROVED.getMsgKey());
-    verifyNoInteractions(userNotificationService);
+    verifyNoInteractions(userNotificationService, updateReportService);
   }
 
   @Test
