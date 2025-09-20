@@ -29,33 +29,35 @@ management:
   health:
     circuitbreakers:
       enabled: true
+
 cors:
   allowed-origins: "http://localhost:4200,http://localhost:8080"
+
 adapters:
   r2dbc:
-    host: "${DB_HOST}"
-    port: "${DB_PORT}"
     database: "${DB_NAME_LOAN}"
     schema: "${DB_SCHEMA:public}"
-    username: "${DB_USERNAME}"
-    password: "${DB_PASSWORD}"
-security:
-  jwt:
-    public-key-path: "${JWT_PUBLIC_KEY_PATH}"
+
 services:
   auth:
     url: "${MS_AUTH_URL}"
     api-key: "${API_KEY}"
+
 aws:
-  region: "${AWS_REGION}"
+  region: "us-east-1"
   sqs:
     notifications-queue-url: "${AWS_NOTIFICATIONS_SQS_QUEUE_URL}"
     debt-capacity-queue-url: "${AWS_DEBT_CAPACITY_SQS_QUEUE_URL}"
     loan-report-queue-url: "${AWS_LOAN_REPORT_SQS_QUEUE_URL}"
+  secrets:
+    rds: "crediya/rds/auth"
+    jwt-key-pair: "jwt/rsa/keys"
+
 adapter:
   restconsumer:
     timeout: 5000
     url: "http://localhost:8080"
+
 resilience4j:
   circuitbreaker:
     instances:
@@ -77,10 +79,10 @@ resilience4j:
         slidingWindowSize: 10
         minimumNumberOfCalls: 10
         waitDurationInOpenState: "10s"
+
 entrypoint:
   sqs:
     region: "us-east-1"
-    # endpoint: "http://localhost:4566"
     queueUrl: "${AWS_LOAN_APL_RESULT_SQS_QUEUE_URL}"
     waitTimeSeconds: 20
     maxNumberOfMessages: 10

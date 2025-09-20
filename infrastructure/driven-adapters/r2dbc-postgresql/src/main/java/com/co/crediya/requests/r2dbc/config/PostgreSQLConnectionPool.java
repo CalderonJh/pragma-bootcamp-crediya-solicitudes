@@ -1,32 +1,40 @@
 package com.co.crediya.requests.r2dbc.config;
 
+import static java.util.Objects.requireNonNull;
+
+import co.com.bancolombia.secretsmanager.api.GenericManagerAsync;
+import co.com.bancolombia.secretsmanager.api.exceptions.SecretException;
 import io.r2dbc.pool.ConnectionPool;
 import io.r2dbc.pool.ConnectionPoolConfiguration;
 import io.r2dbc.postgresql.PostgresqlConnectionConfiguration;
 import io.r2dbc.postgresql.PostgresqlConnectionFactory;
 import io.r2dbc.postgresql.client.SSLMode;
 import java.time.Duration;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class PostgreSQLConnectionPool {
-    /* Change these values for your project */
     public static final int INITIAL_SIZE = 12;
     public static final int MAX_SIZE = 15;
     public static final int MAX_IDLE_TIME = 30;
-    public static final int DEFAULT_PORT = 5432;
 
-	@Bean
-	public ConnectionPool getConnectionConfig(PostgresqlConnectionProperties properties) {
+  @Bean
+  public ConnectionPool getConnectionConfig(
+      PostgresqlConnectionProperties properties,
+      GenericManagerAsync secretManager,
+      @Value("${aws.secrets.rds}") String secretName)
+      throws SecretException {
+    RdsSecret secret = requireNonNull(secretManager.getSecret(secretName, RdsSecret.class).block());
     PostgresqlConnectionConfiguration dbConfiguration =
         PostgresqlConnectionConfiguration.builder()
-            .host(properties.host())
-            .port(properties.port())
+            .host(secret.host())
+            .port(secret.port())
             .database(properties.database())
             .schema(properties.schema())
-            .username(properties.username())
-            .password(properties.password())
+            .username(secret.username())
+            .password(secret.password())
             .sslMode(SSLMode.REQUIRE)
             .build();
 

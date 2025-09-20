@@ -2,16 +2,14 @@ package com.co.crediya.requests.metrics.aws;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
-import lombok.AllArgsConstructor;
-import org.springframework.stereotype.Component;
-import software.amazon.awssdk.metrics.MetricCollection;
-import software.amazon.awssdk.metrics.MetricPublisher;
-
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.stream.Collectors;
+import lombok.AllArgsConstructor;
+import org.springframework.stereotype.Component;
+import software.amazon.awssdk.metrics.MetricCollection;
+import software.amazon.awssdk.metrics.MetricPublisher;
 
 @Component
 @AllArgsConstructor
@@ -24,12 +22,12 @@ public class MicrometerMetricPublisher implements MetricPublisher {
         service.submit(() -> {
             List<Tag> tags = buildTags(metricCollection);
             metricCollection.stream()
-                    .filter(record -> record.value() instanceof Duration || record.value() instanceof Integer)
-                    .forEach(record -> {
-                        if (record.value() instanceof Duration) {
-                            registry.timer(record.metric().name(), tags).record((Duration) record.value());
-                        } else if (record.value() instanceof Integer) {
-                            registry.counter(record.metric().name(), tags).increment((Integer) record.value());
+                    .filter(rec -> rec.value() instanceof Duration || rec.value() instanceof Integer)
+                    .forEach(rec -> {
+                        if (rec.value() instanceof Duration) {
+                            registry.timer(rec.metric().name(), tags).record((Duration) rec.value());
+                        } else if (rec.value() instanceof Integer) {
+                            registry.counter(rec.metric().name(), tags).increment((Integer) rec.value());
                         }
                     });
         });
@@ -37,13 +35,13 @@ public class MicrometerMetricPublisher implements MetricPublisher {
 
     @Override
     public void close() {
-
+        // No resources to close
     }
 
     private List<Tag> buildTags(MetricCollection metricCollection) {
         return metricCollection.stream()
-                .filter(record -> record.value() instanceof String || record.value() instanceof Boolean)
-                .map(record -> Tag.of(record.metric().name(), record.value().toString()))
-                .collect(Collectors.toList());
+                .filter(rec -> rec.value() instanceof String || rec.value() instanceof Boolean)
+                .map(rec -> Tag.of(rec.metric().name(), rec.value().toString()))
+                .toList();
     }
 }
