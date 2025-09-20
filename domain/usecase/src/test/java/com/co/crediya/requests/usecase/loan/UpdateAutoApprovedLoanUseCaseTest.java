@@ -8,6 +8,7 @@ import static org.mockito.Mockito.*;
 
 import com.co.crediya.requests.constant.LoanStatusType;
 import com.co.crediya.requests.constant.NotifyStatusType;
+import com.co.crediya.requests.exception.DataNotFoundException;
 import com.co.crediya.requests.model.loanapplication.Applicant;
 import com.co.crediya.requests.model.loanapplication.LoanApplication;
 import com.co.crediya.requests.model.loanapplication.LoanStatus;
@@ -137,7 +138,7 @@ class UpdateAutoApprovedLoanUseCaseTest {
     StepVerifier.create(useCase.execute(randomId, APPROVED_STATUS.getName()))
         .expectErrorMatches(
             ex ->
-                ex instanceof IllegalArgumentException
+                ex instanceof DataNotFoundException
                     && ex.getMessage().equals(MessageTemplate.NOT_FOUND.render("Loan application")))
         .verify();
 

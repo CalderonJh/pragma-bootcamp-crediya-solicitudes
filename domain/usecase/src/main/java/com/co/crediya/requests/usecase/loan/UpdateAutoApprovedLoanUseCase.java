@@ -83,8 +83,7 @@ public class UpdateAutoApprovedLoanUseCase {
         .getById(applicationId)
         .switchIfEmpty(
             Mono.error(
-                new IllegalArgumentException(
-                    MessageTemplate.NOT_FOUND.render("Loan application"))));
+                new DataNotFoundException(MessageTemplate.NOT_FOUND.render("Loan application"))));
   }
 
   private Mono<LoanApplication> validateLoanType(LoanApplication loanApplication) {
