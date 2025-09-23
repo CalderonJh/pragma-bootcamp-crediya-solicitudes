@@ -10,7 +10,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 @Service
-public class RestConsumer implements ApplicantService /* implements Gateway from domain */ {
+public class RestConsumer implements ApplicantService {
   private final WebClient client;
 
   public RestConsumer(

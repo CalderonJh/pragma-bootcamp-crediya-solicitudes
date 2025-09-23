@@ -3,7 +3,7 @@ logging:
     org.springframework.r2dbc.core: "INFO"
     io.r2dbc.postgresql.QUERY: "INFO"
 server:
-  port: 8082
+  port: ${PORT:8080}
 spring:
   config:
     import: "optional:classpath:infrastructure:driven-adapters:notifications:application.yaml"
@@ -35,7 +35,7 @@ cors:
 
 adapters:
   r2dbc:
-    database: "${DB_NAME_LOAN}"
+    database: "${DB_NAME:postgres}"
     schema: "${DB_SCHEMA:public}"
 
 services:
@@ -44,14 +44,14 @@ services:
     api-key: "${API_KEY}"
 
 aws:
-  region: "us-east-1"
+  region: "${AWS_REGION:us-east-1}"
   sqs:
     notifications-queue-url: "${AWS_NOTIFICATIONS_SQS_QUEUE_URL}"
     debt-capacity-queue-url: "${AWS_DEBT_CAPACITY_SQS_QUEUE_URL}"
     loan-report-queue-url: "${AWS_LOAN_REPORT_SQS_QUEUE_URL}"
   secrets:
-    rds: "crediya/rds/auth"
-    jwt-key-pair: "jwt/rsa/keys"
+    rds: "${AWS_RDS_SECRET}"
+    jwt-key-pair: "${AWS_RSA_KEYS_SECRET}"
 
 adapter:
   restconsumer:
@@ -82,7 +82,7 @@ resilience4j:
 
 entrypoint:
   sqs:
-    region: "us-east-1"
+    region: "${AWS_REGION:us-east-1}"
     queueUrl: "${AWS_LOAN_APL_RESULT_SQS_QUEUE_URL}"
     waitTimeSeconds: 20
     maxNumberOfMessages: 10
