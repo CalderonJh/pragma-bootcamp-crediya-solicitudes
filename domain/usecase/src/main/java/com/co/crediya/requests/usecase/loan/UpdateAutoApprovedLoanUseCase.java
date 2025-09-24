@@ -7,9 +7,9 @@ import static reactor.core.publisher.Mono.defer;
 import com.co.crediya.requests.constant.LoanStatusType;
 import com.co.crediya.requests.constant.NotifyStatusType;
 import com.co.crediya.requests.exception.DataNotFoundException;
-import com.co.crediya.requests.model.loanapplication.Applicant;
 import com.co.crediya.requests.model.loanapplication.Installment;
 import com.co.crediya.requests.model.loanapplication.LoanApplication;
+import com.co.crediya.requests.model.loanapplication.User;
 import com.co.crediya.requests.model.loanapplication.gateways.*;
 import com.co.crediya.requests.model.notifications.EmailMessage;
 import com.co.crediya.requests.model.notifications.gateways.EmailMessageRepository;
@@ -28,7 +28,7 @@ public class UpdateAutoApprovedLoanUseCase {
   private final LoanApplicationRepository loanApplicationRepository;
   private final UserNotificationService notificationService;
   private final LoanStatusRepository loanStatusRepository;
-  private final ApplicantService applicantService;
+  private final UserService userService;
   private final EmailMessageRepository emailMessageRepository;
   private final UpdateReportService updateReportService;
 
@@ -58,9 +58,9 @@ public class UpdateAutoApprovedLoanUseCase {
     return notNull(applicationId, "Loan application id").then(notNull(result, "Result"));
   }
 
-  private Mono<Applicant> getApplicant(LoanApplication application) {
-    return applicantService
-        .getApplicantById(application.getApplicantId())
+  private Mono<User> getApplicant(LoanApplication application) {
+    return userService
+        .getUserById(application.getApplicantId())
         .switchIfEmpty(
             Mono.error(new DataNotFoundException(MessageTemplate.NOT_FOUND.render("Applicant"))));
   }
@@ -92,7 +92,7 @@ public class UpdateAutoApprovedLoanUseCase {
         : Mono.error(new IllegalArgumentException(LOAN_TYPE_NO_AUTO_APPROVAL));
   }
 
-  private Mono<LoanApplication> notifyUser(LoanApplication loanApplication, Applicant applicant) {
+  private Mono<LoanApplication> notifyUser(LoanApplication loanApplication, User user) {
     NotifyStatusType statusType =
         NotifyStatusType.fromDBValue(loanApplication.getLoanStatus().getName());
     return emailMessageRepository
@@ -101,17 +101,17 @@ public class UpdateAutoApprovedLoanUseCase {
             Mono.error(
                 new DataNotFoundException(
                     MessageTemplate.NOT_FOUND.render("Email message template"))))
-        .flatMap(msg -> resolveMessageParams(loanApplication, msg, applicant))
-        .flatMap(msg -> notificationService.sendNotificationByEmail(applicant, msg))
+        .flatMap(msg -> resolveMessageParams(loanApplication, msg, user))
+        .flatMap(msg -> notificationService.sendNotificationByEmail(user, msg))
         .thenReturn(loanApplication);
   }
 
   private Mono<EmailMessage> resolveMessageParams(
-      LoanApplication loanApplication, EmailMessage message, Applicant applicant) {
+      LoanApplication loanApplication, EmailMessage message, User user) {
     NotifyStatusType statusType =
         NotifyStatusType.fromDBValue(loanApplication.getLoanStatus().getName());
     Map<String, Object> params = new HashMap<>();
-    params.put("nombre", applicant.getName());
+    params.put("nombre", user.getName());
     if (statusType == NotifyStatusType.APPROVED) {
       params.put("installments", buildPaymentPlan(loanApplication));
     }

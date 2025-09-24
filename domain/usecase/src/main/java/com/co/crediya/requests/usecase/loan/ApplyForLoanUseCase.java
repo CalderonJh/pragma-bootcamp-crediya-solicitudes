@@ -25,7 +25,7 @@ public class ApplyForLoanUseCase {
   private final LoanStatusRepository loanStatusRepository;
   private final LoanTypeRepository loanTypeRepository;
   private final DebtCapacityService debtCapacityService;
-  private final ApplicantService applicantService;
+  private final UserService userService;
   private static final Logger logger = Logger.getLogger(ApplyForLoanUseCase.class.getName());
 
   public Mono<Void> execute(LoanApplication loanApplication, Actor actor) {
@@ -44,8 +44,8 @@ public class ApplyForLoanUseCase {
     boolean automaticApproval = loanApplication.getLoanType().getAutoValidate();
     if (!automaticApproval) return Mono.just(loanApplication);
 
-    return applicantService
-        .getApplicantById(loanApplication.getApplicantId())
+    return userService
+        .getUserById(loanApplication.getApplicantId())
         .switchIfEmpty(
             Mono.error(
                 new DataNotFoundException(MessageTemplate.NOT_FOUND.render("Loan applicant"))))

@@ -9,7 +9,7 @@ import static org.mockito.Mockito.*;
 import com.co.crediya.requests.constant.LoanStatusType;
 import com.co.crediya.requests.constant.NotifyStatusType;
 import com.co.crediya.requests.exception.DataNotFoundException;
-import com.co.crediya.requests.model.loanapplication.Applicant;
+import com.co.crediya.requests.model.loanapplication.User;
 import com.co.crediya.requests.model.loanapplication.LoanApplication;
 import com.co.crediya.requests.model.loanapplication.LoanStatus;
 import com.co.crediya.requests.model.loanapplication.LoanType;
@@ -43,7 +43,7 @@ class UpdateAutoApprovedLoanUseCaseTest {
   private LoanStatusRepository loanStatusRepository;
   private UserNotificationService userNotificationService;
   private EmailMessageRepository emailMessageRepository;
-  private ApplicantService applicantService;
+  private UserService userService;
   private UpdateReportService updateReportService;
   private UpdateAutoApprovedLoanUseCase useCase;
 
@@ -55,7 +55,7 @@ class UpdateAutoApprovedLoanUseCaseTest {
     loanStatusRepository = mock(LoanStatusRepository.class);
     userNotificationService = mock(UserNotificationService.class);
     emailMessageRepository = mock(EmailMessageRepository.class);
-    applicantService = mock(ApplicantService.class);
+    userService = mock(UserService.class);
     updateReportService = mock(UpdateReportService.class);
 
     useCase =
@@ -63,7 +63,7 @@ class UpdateAutoApprovedLoanUseCaseTest {
             loanApplicationRepository,
             userNotificationService,
             loanStatusRepository,
-            applicantService,
+					userService,
             emailMessageRepository,
             updateReportService);
 
@@ -83,8 +83,8 @@ class UpdateAutoApprovedLoanUseCaseTest {
             .build();
   }
 
-  private Applicant mockApplicant() {
-    return new Applicant(DEFAULT_APPLICANT_ID, "John", "Doe", "email@email.com", BigDecimal.TEN);
+  private User mockApplicant() {
+    return new User(DEFAULT_APPLICANT_ID, "John", "Doe", "email@email.com", BigDecimal.TEN);
   }
 
   private EmailMessage mockEmailMessage(NotifyStatusType statusType) {
@@ -94,7 +94,7 @@ class UpdateAutoApprovedLoanUseCaseTest {
   private void mockCommonInteractions(
       LoanApplication loanApplication,
       LoanStatus newStatus,
-      Applicant applicant,
+      User user,
       EmailMessage emailMessage) {
     when(loanApplicationRepository.getById(loanApplication.getId()))
         .thenReturn(Mono.just(loanApplication));
@@ -102,11 +102,11 @@ class UpdateAutoApprovedLoanUseCaseTest {
         .thenReturn(Mono.just(newStatus));
     when(loanApplicationRepository.saveLoanApplication(any()))
         .thenAnswer(inv -> Mono.just(inv.getArgument(0)));
-    when(applicantService.getApplicantById(loanApplication.getApplicantId()))
-        .thenReturn(Mono.just(applicant));
+    when(userService.getUserById(loanApplication.getApplicantId()))
+        .thenReturn(Mono.just(user));
     when(emailMessageRepository.getByKey(emailMessage.getKey()))
         .thenReturn(Mono.just(emailMessage));
-    when(userNotificationService.sendNotificationByEmail(eq(applicant), any()))
+    when(userNotificationService.sendNotificationByEmail(eq(user), any()))
         .thenReturn(Mono.just("msgId-123"));
   }
 
@@ -114,10 +114,10 @@ class UpdateAutoApprovedLoanUseCaseTest {
   @DisplayName("Must update loan application status, notify user and update active loans report")
   void mustUpdateLoanApplicationStatusAndNotifyUser() {
     LoanApplication loanApplication = baseLoanApplication.toBuilder().build();
-    Applicant applicant = mockApplicant();
+    User user = mockApplicant();
     EmailMessage emailMessage = mockEmailMessage(NotifyStatusType.APPROVED);
 
-    mockCommonInteractions(loanApplication, APPROVED_STATUS, applicant, emailMessage);
+    mockCommonInteractions(loanApplication, APPROVED_STATUS, user, emailMessage);
     when(updateReportService.update(anyLong(), any())).thenReturn(Mono.just("report-ok"));
 
     StepVerifier.create(useCase.execute(DEFAULT_APPLICATION_ID, APPROVED_STATUS.getName()))
@@ -145,7 +145,7 @@ class UpdateAutoApprovedLoanUseCaseTest {
     verify(loanApplicationRepository).getById(randomId);
     verifyNoInteractions(
         loanStatusRepository,
-        applicantService,
+			userService,
         userNotificationService,
         emailMessageRepository,
         updateReportService);
@@ -156,10 +156,10 @@ class UpdateAutoApprovedLoanUseCaseTest {
   void mustNotBuildPaymentPlanWhenStatusIsNotApproved() {
     LoanApplication loanApplication =
         baseLoanApplication.toBuilder().loanStatus(PENDING_STATUS).build();
-    Applicant applicant = mockApplicant();
+    User user = mockApplicant();
     EmailMessage emailMessage = mockEmailMessage(NotifyStatusType.REJECTED);
 
-    mockCommonInteractions(loanApplication, REJECTED_STATUS, applicant, emailMessage);
+    mockCommonInteractions(loanApplication, REJECTED_STATUS, user, emailMessage);
 
     StepVerifier.create(useCase.execute(DEFAULT_APPLICATION_ID, REJECTED_STATUS.getName()))
         .assertNext(
@@ -195,7 +195,7 @@ class UpdateAutoApprovedLoanUseCaseTest {
     verify(loanApplicationRepository).getById(DEFAULT_APPLICATION_ID);
     verifyNoInteractions(
         loanStatusRepository,
-        applicantService,
+			userService,
         emailMessageRepository,
         userNotificationService,
         updateReportService);

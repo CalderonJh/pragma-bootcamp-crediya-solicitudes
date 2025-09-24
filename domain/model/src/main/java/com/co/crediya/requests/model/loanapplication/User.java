@@ -8,7 +8,7 @@ import lombok.*;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class Applicant {
+public class User {
   private UUID id;
 	private String name;
 	private String lastName;

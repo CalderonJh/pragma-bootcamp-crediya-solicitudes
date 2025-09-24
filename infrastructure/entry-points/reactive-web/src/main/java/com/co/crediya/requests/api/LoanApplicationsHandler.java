@@ -17,10 +17,7 @@ import com.co.crediya.requests.model.loanapplication.LoanApplication;
 import com.co.crediya.requests.model.loanapplication.LoanApplicationFilter;
 import com.co.crediya.requests.model.util.Actor;
 import com.co.crediya.requests.model.util.pagination.Page;
-import com.co.crediya.requests.usecase.loan.ApplyForLoanUseCase;
-import com.co.crediya.requests.usecase.loan.FindLoanApplicationsUseCase;
-import com.co.crediya.requests.usecase.loan.UpdateAutoApprovedLoanUseCase;
-import com.co.crediya.requests.usecase.loan.UpdateLoanApplicationUseCase;
+import com.co.crediya.requests.usecase.loan.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -53,6 +50,7 @@ public class LoanApplicationsHandler {
   private final FindLoanApplicationsUseCase findLoanApplicationsUseCase;
   private final UpdateLoanApplicationUseCase updateLoanApplicationUseCase;
   private final UpdateAutoApprovedLoanUseCase updateAutoApprovedLoanUseCase;
+  private final GetDailyReportUseCase getDailyReportUseCase;
   private final AuthServiceClient authServiceClient;
   private final TransactionalOperator transactionalOperator;
 
@@ -195,5 +193,17 @@ public class LoanApplicationsHandler {
                           applicationId.map(UUID::fromString).orElse(null), result.orElse(null))
                       .flatMap(res -> ServerResponse.status(HttpStatus.OK).bodyValue(res)));
             });
+  }
+
+  @Operation(
+      operationId = "getDailyReport",
+      summary = "Envía el reporte diario de solicitudes",
+      responses = {
+        @ApiResponse(
+            responseCode = "200",
+            content = @Content(schema = @Schema(implementation = LoanApplication.class)))
+      })
+  public Mono<ServerResponse> getDailyReport(ServerRequest serverRequest) {
+    return getDailyReportUseCase.execute().then(ServerResponse.status(HttpStatus.OK).build());
   }
 }

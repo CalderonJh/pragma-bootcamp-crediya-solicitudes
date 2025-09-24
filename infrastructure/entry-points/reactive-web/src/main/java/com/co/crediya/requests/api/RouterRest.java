@@ -18,7 +18,7 @@ public class RouterRest {
 
   @RouterOperations({
     @RouterOperation(
-        path = "/api/v1/solicitud",
+        path = "/api/v1/solicitudes",
         method = RequestMethod.POST,
         beanClass = LoanApplicationsHandler.class,
         beanMethod = "applyForLoan"),
@@ -31,13 +31,19 @@ public class RouterRest {
         path = "/api/v1/solicitudes/estado",
         method = RequestMethod.PATCH,
         beanClass = LoanApplicationsHandler.class,
-        beanMethod = "updateLoanAplStatus")
+        beanMethod = "updateLoanAplStatus"),
+    @RouterOperation(
+        path = "/api/v1/solicitudes/reporte",
+        method = RequestMethod.POST,
+        beanClass = LoanApplicationsHandler.class,
+        beanMethod = "getDailyReport")
   })
   @Bean
   public RouterFunction<ServerResponse> routerFunction(LoanApplicationsHandler handler) {
     return route(POST("/api/v1/solicitudes"), handler::applyForLoan)
         .andRoute(PATCH("/api/v1/solicitudes/estado"), handler::updateLoanAplStatus)
         .andRoute(PATCH("/api/v1/solicitudes/auto-aprov/estado"), handler::updateAutoApprovedApl)
+        .andRoute(POST("/api/v1/solicitudes/reporte"), handler::getDailyReport)
         .and(route(GET("/api/v1/solicitudes"), handler::getLoanApplicationsPage));
   }
 

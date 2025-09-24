@@ -1,6 +1,6 @@
 package com.co.crediya.requests.sqs.service;
 
-import com.co.crediya.requests.model.loanapplication.Applicant;
+import com.co.crediya.requests.model.loanapplication.User;
 import com.co.crediya.requests.model.loanapplication.LoanApplication;
 import com.co.crediya.requests.model.loanapplication.gateways.DebtCapacityService;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -46,11 +46,11 @@ public class DebtCapacityServiceSQS implements DebtCapacityService {
 
   @Override
   public Mono<String> validateDebtCapacity(
-      Applicant applicant, List<LoanApplication> activeLoans, LoanApplication currentApplication) {
+		User user, List<LoanApplication> activeLoans, LoanApplication currentApplication) {
     try {
       Map<String, Object> payload =
           Map.of(
-              "applicant", applicant,
+              "applicant", user,
               "loanApplication", currentApplication,
               "activeLoans", activeLoans);
       String messageBody = mapper.writeValueAsString(payload);

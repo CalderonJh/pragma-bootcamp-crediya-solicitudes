@@ -42,7 +42,8 @@ services:
   auth:
     url: "${MS_AUTH_URL}"
     api-key: "${API_KEY}"
-
+  reports:
+    url: "${MS_REPORTS_URL}"
 aws:
   region: "${AWS_REGION:us-east-1}"
   sqs:

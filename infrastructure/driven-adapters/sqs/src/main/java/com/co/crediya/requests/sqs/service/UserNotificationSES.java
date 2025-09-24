@@ -1,15 +1,17 @@
 package com.co.crediya.requests.sqs.service;
 
 import com.co.crediya.requests.api.client.AuthServiceClient;
-import com.co.crediya.requests.model.loanapplication.Applicant;
+import com.co.crediya.requests.model.loanapplication.User;
 import com.co.crediya.requests.model.loanapplication.gateways.UserNotificationService;
 import com.co.crediya.requests.model.notifications.EmailMessage;
 import com.co.crediya.requests.sqs.util.EmailRenderer;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
@@ -51,12 +53,11 @@ public class UserNotificationSES implements UserNotificationService {
         .flatMap(
             user -> {
               try {
+                EmailRenderer renderer = new EmailRenderer();
+                String renderedBody = renderer.render(message.getTemplate(), message.getParams());
                 String messageBody =
                     mapper.writeValueAsString(
-                        Map.of(
-                            "toAddress", user.email(),
-                            "subject", message.getSubject(),
-                            "body", message.getTemplate()));
+                        buildLamdaBodyMap(List.of(user.email()), message, renderedBody));
                 return sendMessage(messageBody);
               } catch (Exception e) {
                 return Mono.error(e);
@@ -65,19 +66,44 @@ public class UserNotificationSES implements UserNotificationService {
   }
 
   @Override
-  public Mono<String> sendNotificationByEmail(Applicant applicant, EmailMessage message) {
+  public Mono<String> sendNotificationByEmail(User user, EmailMessage message) {
     try {
       EmailRenderer renderer = new EmailRenderer();
       String renderedBody = renderer.render(message.getTemplate(), message.getParams());
       String messageBody =
           mapper.writeValueAsString(
-              Map.of(
-                  "toAddress", applicant.getEmail(),
-                  "subject", message.getSubject(),
-                  "body", renderedBody));
+              buildLamdaBodyMap(List.of(user.getEmail()), message, renderedBody));
       return sendMessage(messageBody);
     } catch (Exception e) {
       return Mono.error(e);
     }
+  }
+
+  private static Map<String, Object> buildLamdaBodyMap(
+      List<String> emails, EmailMessage message, String renderedBody) {
+    return Map.of(
+        "toAddresses", emails,
+        "subject", message.getSubject(),
+        "body", renderedBody);
+  }
+
+  @Override
+  public Mono<String> sendNotificationByEmail(Flux<User> users, EmailMessage message) {
+    EmailRenderer renderer = new EmailRenderer();
+
+    return users
+        .map(User::getEmail)
+        .collectList()
+        .flatMap(
+            emails -> {
+              try {
+                String renderedBody = renderer.render(message.getTemplate(), message.getParams());
+                String messageBody =
+                    mapper.writeValueAsString(buildLamdaBodyMap(emails, message, renderedBody));
+                return sendMessage(messageBody);
+              } catch (Exception e) {
+                return Mono.error(e);
+              }
+            });
   }
 }

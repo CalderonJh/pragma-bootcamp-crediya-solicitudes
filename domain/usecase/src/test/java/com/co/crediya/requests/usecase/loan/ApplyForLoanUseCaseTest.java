@@ -28,7 +28,7 @@ class ApplyForLoanUseCaseTest {
   private LoanStatusRepository loanStatusRepository;
   private LoanTypeRepository loanTypeRepository;
   private DebtCapacityService debtCapacityService;
-  private ApplicantService applicantService;
+  private UserService userService;
   private ApplyForLoanUseCase useCase;
   private LoanApplication loanApplication;
   private Actor actor;
@@ -39,14 +39,14 @@ class ApplyForLoanUseCaseTest {
     loanStatusRepository = mock(LoanStatusRepository.class);
     loanTypeRepository = mock(LoanTypeRepository.class);
     debtCapacityService = mock(DebtCapacityService.class);
-    applicantService = mock(ApplicantService.class);
+    userService = mock(UserService.class);
     useCase =
         new ApplyForLoanUseCase(
             loanApplicationRepository,
             loanStatusRepository,
             loanTypeRepository,
             debtCapacityService,
-            applicantService);
+					userService);
 
     loanApplication =
         LoanApplication.builder()
@@ -162,10 +162,10 @@ class ApplyForLoanUseCaseTest {
     when(loanApplicationRepository.saveLoanApplication(loanApplication))
         .thenReturn(Mono.just(loanApplication));
 
-    when(applicantService.getApplicantById(loanApplication.getApplicantId()))
+    when(userService.getUserById(loanApplication.getApplicantId()))
         .thenReturn(
             Mono.just(
-                new Applicant(
+                new User(
                     UUID.randomUUID(), "John", "Doe", "jhondoe@email.com", BigDecimal.ONE)));
 
     when(loanApplicationRepository.getByUserIdAndStatus(
@@ -179,7 +179,7 @@ class ApplyForLoanUseCaseTest {
 
     verify(loanTypeRepository).findLoanTypeById(loanApplication.getLoanType().getId());
     verify(loanStatusRepository).findLoanStatusByName(Constant.DEFAULT_LOAN_STATUS);
-    verify(applicantService).getApplicantById(loanApplication.getApplicantId());
+    verify(userService).getUserById(loanApplication.getApplicantId());
     verify(loanApplicationRepository)
         .getByUserIdAndStatus(
             loanApplication.getApplicantId(), NotifyStatusType.APPROVED.getDbValue());
